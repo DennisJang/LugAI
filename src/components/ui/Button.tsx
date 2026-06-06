@@ -55,6 +55,8 @@ export function Button({
     <PressableScale
       haptic={isDisabled ? null : haptic}
       disabled={isDisabled}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         styles.base,
         {

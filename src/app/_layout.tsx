@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+export { ErrorScreen as ErrorBoundary } from '@/components/ErrorScreen';
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -12,6 +14,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="destination" options={{ presentation: 'modal' }} />
           <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
         </Stack>
       </SafeAreaProvider>

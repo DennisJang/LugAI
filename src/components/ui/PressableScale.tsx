@@ -85,6 +85,7 @@ export function PressableScale({
       onPressOut={handlePressOut}
       onPress={handlePress}
       disabled={disabled}
+      accessibilityRole="button"
       style={[animatedStyle, style]}
       {...rest}>
       {children}

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Card, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
 import { radius, space, useTheme, type VerdictKey } from '@/design';
+import { useTripStore } from '@/lib/store';
 
 const EXAMPLES: { emoji: string; name: string; verdict: VerdictKey; label: string }[] = [
   { emoji: '🔋', name: '보조배터리 20,000mAh', verdict: 'warning', label: '기내만' },
@@ -13,6 +14,7 @@ const EXAMPLES: { emoji: string; name: string; verdict: VerdictKey; label: strin
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const destination = useTripStore((s) => s.destination);
 
   return (
     <Screen scroll>
@@ -25,16 +27,16 @@ export default function HomeScreen() {
       </View>
 
       {/* 도착지 */}
-      <PressableScale haptic="light" onPress={() => {}} style={styles.destBlock}>
+      <PressableScale haptic="light" onPress={() => router.push('/destination')} style={styles.destBlock}>
         <Card>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Text style={styles.flag}>🇯🇵</Text>
+              <Text style={styles.flag}>{destination.flag}</Text>
               <View style={styles.gap2}>
                 <Text variant="caption" muted>
                   도착지
                 </Text>
-                <Text variant="title3">일본 · 도쿄</Text>
+                <Text variant="title3">{destination.name}</Text>
               </View>
             </View>
             <View style={[styles.changeChip, { backgroundColor: colors.backgroundAlt }]}>
@@ -57,7 +59,7 @@ export default function HomeScreen() {
             짐을 펼쳐놓고 한 장
           </Text>
           <Text variant="callout" muted center>
-            AI가 도착지 규정으로 자동 판정해드려요
+            AI가 {destination.name} 규정으로 자동 판정해드려요
           </Text>
         </View>
         <Button
@@ -104,7 +106,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  greeting: { paddingTop: space[3], gap: 2, marginBottom: space[6] },
+  greeting: { paddingTop: space[2], gap: 2, marginBottom: space[6] },
   destBlock: { marginBottom: space[5] },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: space[3] },

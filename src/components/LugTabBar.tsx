@@ -42,6 +42,9 @@ export function LugTabBar({ state, navigation }: BottomTabBarProps) {
         haptic="selection"
         pressScale={0.9}
         onPress={onPress}
+        accessibilityLabel={meta.label}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: focused }}
         style={styles.tab}>
         <Ionicons name={focused ? meta.active : meta.inactive} size={24} color={color} />
         <Text variant="footnote" color={color}>
@@ -68,6 +71,7 @@ export function LugTabBar({ state, navigation }: BottomTabBarProps) {
           haptic="medium"
           pressScale={0.92}
           onPress={() => router.push('/scan')}
+          accessibilityLabel="짐 스캔"
           style={[styles.fab, { backgroundColor: colors.primary }, shadow.lg]}>
           <Ionicons name="scan" size={26} color={colors.onPrimary} />
         </PressableScale>
