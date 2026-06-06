@@ -59,7 +59,8 @@
           "photosPermission": "앨범에서 짐 사진을 선택해 분석하기 위해 사진 접근을 사용합니다."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

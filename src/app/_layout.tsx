@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { initMonitoring } from '@/lib/monitoring';
 import { useTripStore } from '@/lib/store';
 
 export { ErrorScreen as ErrorBoundary } from '@/components/ErrorScreen';
@@ -21,6 +22,10 @@ function OnboardingGate() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    initMonitoring();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

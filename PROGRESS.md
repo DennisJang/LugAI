@@ -16,7 +16,12 @@ _업데이트: 2026-06-06_
 - **접근성** — accessibilityRole/Label(아이콘 버튼 포함).
 - **스토어 준비** — 앱 아이콘·스플래시(브랜드), `app.json`(번들ID `com.lugai.app`, 권한 문구, ITSAppUsesNonExemptEncryption=false, 권한 최소화), `eas.json`, 개인정보처리방침·이용약관(앱 내 화면 + 프로필 링크), `docs/STORE_LISTING.md`.
 
-- **다국어(i18n)** — 한/영 지원: 기기 언어 자동 감지 + 프로필 토글, UI·국가명·mock·둘러보기·약관(한/영)·AI 출력 언어까지 영어화. 시뮬레이터 검증 완료. ✅
+- **다국어(i18n)** — 한·영·일·중 4개 언어(기기 자동 감지 + 프로필 토글), UI·국가명·mock·둘러보기·약관·AI 출력 언어까지. ✅
+- **규정 신뢰도** — 일반 baseline + 국가별 예외 규정 DB(출처 표기) · 나라별 규정 화면 · AI 프롬프트 그라운딩. ✅
+- **온보딩** — 첫 실행 3슬라이드 + 게이트. ✅
+- **AI 남용 보호** — 이미지 크기 제한 · IP 레이트리밋(`supabase/migrations/0001_rate_limits.sql` 동봉). ✅
+- **단위·오프라인** — metric/imperial 토글, 오프라인 배너. ✅
+- **테스트·모니터링** — jest 유닛 테스트 12개 통과(`npm test`) · Sentry 가드 init(`EXPO_PUBLIC_SENTRY_DSN` 설정 시 활성). ✅
 
 ## ⚠️ 사용자가 해야 할 일
 1. **AI 실연동 (2단계 — `docs/SUPABASE_SETUP.md`)**
