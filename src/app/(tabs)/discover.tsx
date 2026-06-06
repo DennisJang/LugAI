@@ -4,11 +4,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, Chip, Divider, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
 import { space, useTheme, type VerdictKey } from '@/design';
-import { useLocale, useT } from '@/lib/i18n';
+import { type Localized, pick, useLocale, useT } from '@/lib/i18n';
 
-type L = { ko: string; en: string };
-
-const CATEGORIES: L[] = [
+const CATEGORIES: Localized[] = [
   { ko: '전체', en: 'All' },
   { ko: '액체', en: 'Liquids' },
   { ko: '배터리', en: 'Batteries' },
@@ -17,7 +15,7 @@ const CATEGORIES: L[] = [
   { ko: '세관', en: 'Customs' },
 ];
 
-const CASES: { emoji: string; title: L; place: L; verdict: VerdictKey; tag: L }[] = [
+const CASES: { emoji: string; title: Localized; place: Localized; verdict: VerdictKey; tag: Localized }[] = [
   {
     emoji: '🧴',
     title: { ko: '면세 향수 3개, 환승에서 압수', en: 'Three duty-free perfumes seized at transfer' },
@@ -48,7 +46,7 @@ const CASES: { emoji: string; title: L; place: L; verdict: VerdictKey; tag: L }[
   },
 ];
 
-const RULE_COUNTRIES: { code: string; flag: string; name: L; rule: L }[] = [
+const RULE_COUNTRIES: { code: string; flag: string; name: Localized; rule: Localized }[] = [
   { code: 'JP', flag: '🇯🇵', name: { ko: '일본', en: 'Japan' }, rule: { ko: '육류·면세 액체 주의', en: 'Meat & duty-free liquids' } },
   { code: 'US', flag: '🇺🇸', name: { ko: '미국', en: 'United States' }, rule: { ko: 'TSA 3-1-1 룰', en: 'TSA 3-1-1 rule' } },
   { code: 'AU', flag: '🇦🇺', name: { ko: '호주', en: 'Australia' }, rule: { ko: '검역 매우 엄격', en: 'Very strict quarantine' } },
@@ -90,7 +88,7 @@ export default function DiscoverScreen() {
         contentContainerStyle={styles.chips}
         style={styles.chipScroll}>
         {CATEGORIES.map((c, i) => (
-          <Chip key={c.en} label={c[locale]} active={i === 0} />
+          <Chip key={c.en} label={pick(c, locale)} active={i === 0} />
         ))}
       </ScrollView>
 
@@ -104,13 +102,13 @@ export default function DiscoverScreen() {
               <Text style={styles.caseEmoji}>{c.emoji}</Text>
               <View style={styles.flex}>
                 <Text variant="bodyStrong" numberOfLines={2}>
-                  {c.title[locale]}
+                  {pick(c.title, locale)}
                 </Text>
                 <Text variant="caption" muted style={styles.casePlace}>
-                  {c.place[locale]}
+                  {pick(c.place, locale)}
                 </Text>
               </View>
-              <VerdictBadge verdict={c.verdict} label={c.tag[locale]} size="sm" />
+              <VerdictBadge verdict={c.verdict} label={pick(c.tag, locale)} size="sm" />
             </Card>
           </PressableScale>
         ))}
@@ -130,9 +128,9 @@ export default function DiscoverScreen() {
               <View style={styles.countryRow}>
                 <Text style={styles.countryFlag}>{c.flag}</Text>
                 <View style={styles.flex}>
-                  <Text variant="body">{c.name[locale]}</Text>
+                  <Text variant="body">{pick(c.name, locale)}</Text>
                   <Text variant="caption" muted>
-                    {c.rule[locale]}
+                    {pick(c.rule, locale)}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />

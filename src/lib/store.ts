@@ -21,9 +21,13 @@ export interface PendingImage {
 
 function deviceLocale(): Locale {
   try {
-    return getLocales()[0]?.languageCode === 'ko' ? 'ko' : 'en';
+    const code = getLocales()[0]?.languageCode;
+    if (code === 'ko') return 'ko';
+    if (code === 'ja') return 'ja';
+    if (code === 'zh') return 'zh';
+    return 'en';
   } catch {
-    return 'ko';
+    return 'en';
   }
 }
 
@@ -32,6 +36,8 @@ interface TripState {
   setLocale: (l: Locale) => void;
   onboarded: boolean;
   setOnboarded: (v: boolean) => void;
+  units: 'metric' | 'imperial';
+  setUnits: (u: 'metric' | 'imperial') => void;
   destination: Country;
   setDestination: (c: Country) => void;
   /** 카메라/앨범에서 받은 이미지(임시, 영속화 안 함) */
@@ -58,6 +64,8 @@ export const useTripStore = create<TripState>()(
       setLocale: (locale) => set({ locale }),
       onboarded: false,
       setOnboarded: (onboarded) => set({ onboarded }),
+      units: 'metric',
+      setUnits: (units) => set({ units }),
       destination: findCountry('JP')!,
       setDestination: (destination) => set({ destination }),
       pendingImage: null,
@@ -97,6 +105,7 @@ export const useTripStore = create<TripState>()(
         trips: s.trips,
         locale: s.locale,
         onboarded: s.onboarded,
+        units: s.units,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

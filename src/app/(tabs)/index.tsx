@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { Button, Card, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
 import { radius, space, useTheme, type VerdictKey } from '@/design';
 import { countryName } from '@/lib/countries';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
 
   return (
     <Screen scroll>
+      <OfflineBanner />
       <View style={styles.greeting}>
         <Text variant="subhead" muted>
           {t('home.greeting')}

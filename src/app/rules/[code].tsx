@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
 import { countryName, findCountry } from '@/lib/countries';
-import { pick, useLocale, useT } from '@/lib/i18n';
+import { type Locale, pick, useLocale, useT } from '@/lib/i18n';
 import { BASELINE, countryNotes, type CountryNote, type RegRule } from '@/lib/regulations';
 
 export default function RulesScreen() {
@@ -68,7 +68,7 @@ export default function RulesScreen() {
   );
 }
 
-function RuleCard({ rule, locale, sourceLabel }: { rule: RegRule; locale: 'ko' | 'en'; sourceLabel: string }) {
+function RuleCard({ rule, locale, sourceLabel }: { rule: RegRule; locale: Locale; sourceLabel: string }) {
   return (
     <Card>
       <View style={styles.ruleTop}>
@@ -88,7 +88,7 @@ function RuleCard({ rule, locale, sourceLabel }: { rule: RegRule; locale: 'ko' |
   );
 }
 
-function NoteCard({ note, locale }: { note: CountryNote; locale: 'ko' | 'en' }) {
+function NoteCard({ note, locale }: { note: CountryNote; locale: Locale }) {
   const { colors } = useTheme();
   return (
     <Card>

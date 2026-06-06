@@ -40,6 +40,17 @@ npx supabase secrets set ANTHROPIC_API_KEY="<여기에 키>" --project-ref anmmv
 - `claude-opus-4-8` (고정밀, 비용↑)
 - `claude-haiku-4-5-20251001` (저비용·빠름)
 
+## (선택) 레이트리밋 — 남용 방지
+함수에 IP 레이트리밋(기본 30회/시간)이 내장돼 있고, 아래 마이그레이션을 적용하면 활성화됩니다.
+미적용이면 함수가 자동으로 레이트리밋을 건너뜁니다(graceful).
+
+```bash
+npx supabase db push          # supabase/migrations/0001_rate_limits.sql 적용
+# 또는 대시보드 → SQL Editor 에 0001_rate_limits.sql 내용 붙여넣기
+```
+- 한도 조정: `supabase/functions/judge-luggage/index.ts`의 `RATE_MAX` / `RATE_WINDOW`.
+- 이미지 크기 상한도 내장(`MAX_IMAGE_CHARS`).
+
 ## (선택) 향후
-- 남용 방지: Edge Function rate limiting, 또는 익명 로그인 + verify_jwt.
+- 익명 로그인 + verify_jwt로 인증 강화.
 - 규정 캐싱: `regulations` 테이블 시드 후 함수에서 우선 조회 → Claude는 보강용.

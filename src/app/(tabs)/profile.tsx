@@ -4,16 +4,19 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, Divider, Row, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
-import { useLocale, useT } from '@/lib/i18n';
+import { type Locale, useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
 const ROW_INSET = space[5] + 34 + space[3];
+const LOCALE_CYCLE: Locale[] = ['ko', 'en', 'ja', 'zh'];
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const t = useT();
   const locale = useLocale();
   const setLocale = useTripStore((s) => s.setLocale);
+  const units = useTripStore((s) => s.units);
+  const setUnits = useTripStore((s) => s.setUnits);
   const trips = useTripStore((s) => s.trips);
   const itemCount = trips.reduce((n, trip) => n + trip.items.length, 0);
   const countryCount = new Set(trips.map((trip) => trip.destination.code)).size;
@@ -55,13 +58,18 @@ export default function ProfileScreen() {
         {t('profile.settings')}
       </Text>
       <Card padding={0}>
-        <Row icon="options-outline" label={t('profile.units')} value="ml · cm" showChevron={false} />
+        <Row
+          icon="options-outline"
+          label={t('profile.units')}
+          value={units === 'imperial' ? 'oz · in' : 'ml · cm'}
+          onPress={() => setUnits(units === 'metric' ? 'imperial' : 'metric')}
+        />
         <Divider inset={ROW_INSET} />
         <Row
           icon="language-outline"
           label={t('profile.language')}
           value={t('profile.langName')}
-          onPress={() => setLocale(locale === 'ko' ? 'en' : 'ko')}
+          onPress={() => setLocale(LOCALE_CYCLE[(LOCALE_CYCLE.indexOf(locale) + 1) % LOCALE_CYCLE.length])}
         />
       </Card>
 

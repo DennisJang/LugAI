@@ -1,9 +1,15 @@
 // Supabase Edge Function: judge-luggage
-// 사진(base64) + 목적지 + 언어를 받아 Claude vision으로 항공 수하물 판정을 구조화해 반환.
-// 시크릿: ANTHROPIC_API_KEY (Supabase Edge Function secret). 앱/깃에는 절대 포함하지 않음.
+// 사진(base64) + 목적지 + 언어 + 그라운딩을 받아 Claude vision으로 항공 수하물 판정을 반환.
+// 보호: 이미지 크기 제한 + IP 레이트리밋(RPC check_rate_limit, 미적용 시 graceful skip).
+// 시크릿: ANTHROPIC_API_KEY (Edge Function secret). SUPABASE_URL/SERVICE_ROLE_KEY는 플랫폼 자동 주입.
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const MODEL = 'claude-sonnet-4-6';
+const MAX_IMAGE_CHARS = 8_000_000; // base64 길이 상한(~6MB)
+const RATE_MAX = 30; // IP당
+const RATE_WINDOW = 3600; // 초(1시간)
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +46,14 @@ const TOOL = {
 };
 
 function buildPrompt(dest: { code: string; name: string }, locale: string, grounding: string): string {
-  const lang = locale === 'en' ? 'English' : 'Korean (한국어)';
+  const lang =
+    locale === 'en'
+      ? 'English'
+      : locale === 'ja'
+        ? 'Japanese (日本語)'
+        : locale === 'zh'
+          ? 'Simplified Chinese (简体中文)'
+          : 'Korean (한국어)';
   const ground = grounding
     ? `\n\nUse these verified baseline rules as ground truth. Prefer them over your own assumptions and cite the source in the "source" field where relevant:\n${grounding}\n`
     : '';
@@ -64,6 +77,23 @@ function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { ...cors, 'content-type': 'application/json' } });
 }
 
+/** RPC 기반 레이트리밋. 테이블/함수 미적용·오류 시 true(허용)로 graceful 처리. */
+async function rateLimitOk(ip: string): Promise<boolean> {
+  if (!SUPABASE_URL || !SERVICE_ROLE) return true;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_rate_limit`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
+      body: JSON.stringify({ p_ip: ip, p_max: RATE_MAX, p_window_seconds: RATE_WINDOW }),
+    });
+    if (!r.ok) return true;
+    const ok = await r.json();
+    return ok !== false;
+  } catch {
+    return true;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -71,12 +101,17 @@ Deno.serve(async (req: Request) => {
   try {
     if (!ANTHROPIC_API_KEY) return json({ error: 'anthropic_key_not_configured' }, 500);
 
+    const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim();
+    if (!(await rateLimitOk(ip))) return json({ error: 'rate_limited' }, 429);
+
     const body = await req.json().catch(() => null);
     const image = body?.image;
     const mimeType = typeof body?.mimeType === 'string' ? body.mimeType : 'image/jpeg';
-    const locale = body?.locale === 'en' ? 'en' : 'ko';
+    const locale = ['en', 'ja', 'zh'].includes(body?.locale) ? body.locale : 'ko';
+    const grounding = typeof body?.grounding === 'string' ? body.grounding.slice(0, 4000) : '';
     const destination = body?.destination ?? { code: 'XX', name: 'destination' };
     if (!image || typeof image !== 'string') return json({ error: 'image_base64_required' }, 400);
+    if (image.length > MAX_IMAGE_CHARS) return json({ error: 'image_too_large' }, 413);
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -95,7 +130,7 @@ Deno.serve(async (req: Request) => {
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: mimeType, data: image } },
-              { type: 'text', text: buildPrompt(destination, locale) },
+              { type: 'text', text: buildPrompt(destination, locale, grounding) },
             ],
           },
         ],

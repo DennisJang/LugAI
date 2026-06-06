@@ -1,4 +1,4 @@
-import type { Country } from './countries';
+import { countryName, type Country } from './countries';
 import type { Locale } from './i18n';
 import { mockScanFor, type ScanItem, type ScanResult } from './mockScan';
 import { groundingText } from './regulations';
@@ -41,7 +41,7 @@ export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
         image: base64,
         mimeType,
         locale,
-        destination: { code: destination.code, name: locale === 'en' ? destination.nameEn : destination.name },
+        destination: { code: destination.code, name: countryName(destination, locale) },
         grounding: groundingText(destination.code),
       }),
       signal: controller.signal,

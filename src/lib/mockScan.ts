@@ -1,7 +1,7 @@
 import type { VerdictKey } from '@/design';
 
 import type { Country } from './countries';
-import type { Locale } from './i18n';
+import { pick, type Locale } from './i18n';
 
 export interface ScanItem {
   id: string;
@@ -156,12 +156,12 @@ export function mockScanFor(destination: Country, scannedAt: string, locale: Loc
     id: `item-${i}`,
     emoji: b.emoji,
     verdict: b.verdict,
-    name: b.name[locale],
-    badge: b.badge[locale],
-    reason: b.reason[locale],
-    detail: b.detail[locale],
-    caseNote: b.caseNote?.[locale],
-    source: b.source[locale],
+    name: pick(b.name, locale),
+    badge: pick(b.badge, locale),
+    reason: pick(b.reason, locale),
+    detail: pick(b.detail, locale),
+    caseNote: b.caseNote ? pick(b.caseNote, locale) : undefined,
+    source: pick(b.source, locale),
   }));
 
   // 검역 엄격국: 김치 → 금지
@@ -169,13 +169,13 @@ export function mockScanFor(destination: Country, scannedAt: string, locale: Loc
     const kimchi = items.find((it) => it.id === 'item-6');
     if (kimchi) {
       kimchi.verdict = 'danger';
-      kimchi.badge = locale === 'en' ? 'Prohibited' : '반입 금지';
+      kimchi.badge = locale === 'ko' ? '반입 금지' : 'Prohibited';
       kimchi.reason =
-        locale === 'en'
-          ? 'Very strict quarantine — undeclared food is prohibited'
-          : '검역 매우 엄격 — 미신고 식품 반입 금지';
+        locale === 'ko'
+          ? '검역 매우 엄격 — 미신고 식품 반입 금지'
+          : 'Very strict quarantine — undeclared food is prohibited';
       kimchi.caseNote =
-        locale === 'en' ? 'Real cases of $300+ fines are common.' : '실제 $300+ 벌금 사례가 많아요.';
+        locale === 'ko' ? '실제 $300+ 벌금 사례가 많아요.' : 'Real cases of $300+ fines are common.';
     }
   }
 
