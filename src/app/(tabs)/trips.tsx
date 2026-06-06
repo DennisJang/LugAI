@@ -67,7 +67,9 @@ export default function TripsScreen() {
                 key={t.id}
                 haptic="light"
                 pressScale={0.98}
-                onLongPress={() => confirmDelete(t)}>
+                onPress={() => router.push({ pathname: '/trip/[id]', params: { id: t.id } })}
+                onLongPress={() => confirmDelete(t)}
+                accessibilityLabel={`${t.destination.name} 여행 상세`}>
                 <Card style={styles.tripCard}>
                   <View style={styles.tripTop}>
                     <Text style={styles.flag}>{t.destination.flag}</Text>
