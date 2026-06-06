@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, Chip, Divider, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
@@ -39,19 +40,19 @@ const CASES: { emoji: string; title: L; place: L; verdict: VerdictKey; tag: L }[
     tag: { ko: '식품', en: 'Food' },
   },
   {
-    emoji: '🥬',
-    title: { ko: '의외로 통과! 진공포장 김치', en: 'Surprisingly OK: vacuum-packed kimchi' },
-    place: { ko: '🇺🇸 LA', en: '🇺🇸 LA' },
-    verdict: 'success',
-    tag: { ko: '식품', en: 'Food' },
+    emoji: '💨',
+    title: { ko: '전자담배 반입하다 태국서 구금', en: 'Detained in Thailand for a vape' },
+    place: { ko: '🇹🇭 방콕', en: '🇹🇭 Bangkok' },
+    verdict: 'danger',
+    tag: { ko: '세관', en: 'Customs' },
   },
 ];
 
-const RULE_COUNTRIES: { flag: string; name: L; rule: L }[] = [
-  { flag: '🇯🇵', name: { ko: '일본', en: 'Japan' }, rule: { ko: '주요 규정 8개', en: '8 key rules' } },
-  { flag: '🇺🇸', name: { ko: '미국', en: 'United States' }, rule: { ko: 'TSA 3-1-1 룰', en: 'TSA 3-1-1' } },
-  { flag: '🇦🇺', name: { ko: '호주', en: 'Australia' }, rule: { ko: '검역 매우 엄격', en: 'Very strict quarantine' } },
-  { flag: '🇪🇺', name: { ko: '유럽연합', en: 'European Union' }, rule: { ko: '액체 100ml 제한', en: '100ml liquid limit' } },
+const RULE_COUNTRIES: { code: string; flag: string; name: L; rule: L }[] = [
+  { code: 'JP', flag: '🇯🇵', name: { ko: '일본', en: 'Japan' }, rule: { ko: '육류·면세 액체 주의', en: 'Meat & duty-free liquids' } },
+  { code: 'US', flag: '🇺🇸', name: { ko: '미국', en: 'United States' }, rule: { ko: 'TSA 3-1-1 룰', en: 'TSA 3-1-1 rule' } },
+  { code: 'AU', flag: '🇦🇺', name: { ko: '호주', en: 'Australia' }, rule: { ko: '검역 매우 엄격', en: 'Very strict quarantine' } },
+  { code: 'TH', flag: '🇹🇭', name: { ko: '태국', en: 'Thailand' }, rule: { ko: '전자담배 반입 금지', en: 'Vapes banned' } },
 ];
 
 export default function DiscoverScreen() {
@@ -120,9 +121,12 @@ export default function DiscoverScreen() {
       </Text>
       <Card padding={0}>
         {RULE_COUNTRIES.map((c, i) => (
-          <View key={c.name.en}>
+          <View key={c.code}>
             {i > 0 && <Divider inset={space[5] + 30 + space[3]} />}
-            <PressableScale haptic="light" pressScale={0.98}>
+            <PressableScale
+              haptic="light"
+              pressScale={0.98}
+              onPress={() => router.push({ pathname: '/rules/[code]', params: { code: c.code } })}>
               <View style={styles.countryRow}>
                 <Text style={styles.countryFlag}>{c.flag}</Text>
                 <View style={styles.flex}>

@@ -39,9 +39,12 @@ const TOOL = {
   },
 };
 
-function buildPrompt(dest: { code: string; name: string }, locale: string): string {
+function buildPrompt(dest: { code: string; name: string }, locale: string, grounding: string): string {
   const lang = locale === 'en' ? 'English' : 'Korean (한국어)';
-  return `You are an air-travel baggage regulation expert. Identify the carry items visible in the photo and judge each one for travel to "${dest.name} (${dest.code})".
+  const ground = grounding
+    ? `\n\nUse these verified baseline rules as ground truth. Prefer them over your own assumptions and cite the source in the "source" field where relevant:\n${grounding}\n`
+    : '';
+  return `You are an air-travel baggage regulation expert. Identify the carry items visible in the photo and judge each one for travel to "${dest.name} (${dest.code})".${ground}
 
 Consider:
 - Carry-on vs checked baggage vs prohibited

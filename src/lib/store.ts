@@ -30,6 +30,8 @@ function deviceLocale(): Locale {
 interface TripState {
   locale: Locale;
   setLocale: (l: Locale) => void;
+  onboarded: boolean;
+  setOnboarded: (v: boolean) => void;
   destination: Country;
   setDestination: (c: Country) => void;
   /** 카메라/앨범에서 받은 이미지(임시, 영속화 안 함) */
@@ -54,6 +56,8 @@ export const useTripStore = create<TripState>()(
     (set, get) => ({
       locale: deviceLocale(),
       setLocale: (locale) => set({ locale }),
+      onboarded: false,
+      setOnboarded: (onboarded) => set({ onboarded }),
       destination: findCountry('JP')!,
       setDestination: (destination) => set({ destination }),
       pendingImage: null,
@@ -64,12 +68,7 @@ export const useTripStore = create<TripState>()(
       addTrip: (scan) =>
         set({
           trips: [
-            {
-              id: makeId(),
-              destination: scan.destination,
-              createdAt: scan.scannedAt,
-              items: scan.items,
-            },
+            { id: makeId(), destination: scan.destination, createdAt: scan.scannedAt, items: scan.items },
             ...get().trips,
           ],
         }),
@@ -93,7 +92,12 @@ export const useTripStore = create<TripState>()(
         }
         return p as TripState;
       },
-      partialize: (s) => ({ destination: s.destination, trips: s.trips, locale: s.locale }),
+      partialize: (s) => ({
+        destination: s.destination,
+        trips: s.trips,
+        locale: s.locale,
+        onboarded: s.onboarded,
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

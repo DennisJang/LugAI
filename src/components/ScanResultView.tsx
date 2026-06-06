@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
@@ -86,6 +87,17 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
           {t('result.disclaimer')}
         </Text>
       </View>
+
+      <PressableScale
+        haptic="light"
+        onPress={() => router.push({ pathname: '/rules/[code]', params: { code: scan.destination.code } })}
+        style={styles.rulesLink}>
+        <Ionicons name="book-outline" size={16} color={colors.primary} />
+        <Text variant="subhead" color="primary">
+          {t('rules.viewRules')}
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+      </PressableScale>
     </View>
   );
 }
@@ -174,5 +186,6 @@ const styles = StyleSheet.create({
   detail: { marginTop: space[3], paddingTop: space[3], borderTopWidth: StyleSheet.hairlineWidth, gap: space[2] },
   caseBox: { padding: space[3], borderRadius: radius.md },
   disclaimer: { flexDirection: 'row', gap: space[2], padding: space[3], borderRadius: radius.md, marginTop: space[2] },
+  rulesLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[1], paddingVertical: space[4] },
   flex: { flex: 1 },
 });

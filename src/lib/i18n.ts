@@ -114,6 +114,21 @@ export const STRINGS: Record<Locale, Dict> = {
     'notfound.desc': '요청하신 화면이 존재하지 않아요.',
     // legal
     'legal.updated': '최종 업데이트',
+    // rules
+    'rules.general': '공통 항공 규정',
+    'rules.specific': '{country} 특이사항',
+    'rules.none': '추가 특이사항이 없어요',
+    'rules.viewRules': '규정 보기',
+    // onboarding
+    'onboarding.skip': '건너뛰기',
+    'onboarding.next': '다음',
+    'onboarding.start': '시작하기',
+    'onboarding.s1Title': '사진 한 장으로 끝',
+    'onboarding.s1Desc': '짐을 펼쳐놓고 찍으면 AI가 물품을 알아서 인식해요.',
+    'onboarding.s2Title': '나라별 규정 자동 판정',
+    'onboarding.s2Desc': '도착지 기준으로 기내·위탁·금지를 한눈에 정리해드려요.',
+    'onboarding.s3Title': '여행마다 저장',
+    'onboarding.s3Desc': '결과를 저장해 다음 출국 때 다시 확인하세요. AI 판정은 참고용이에요.',
   },
   en: {
     'common.cancel': 'Cancel',
@@ -211,6 +226,19 @@ export const STRINGS: Record<Locale, Dict> = {
     'notfound.title': 'Page not found',
     'notfound.desc': "This screen doesn't exist.",
     'legal.updated': 'Last updated',
+    'rules.general': 'General air rules',
+    'rules.specific': '{country} specifics',
+    'rules.none': 'No additional country notes',
+    'rules.viewRules': 'View rules',
+    'onboarding.skip': 'Skip',
+    'onboarding.next': 'Next',
+    'onboarding.start': 'Get started',
+    'onboarding.s1Title': 'One photo, done',
+    'onboarding.s1Desc': 'Lay out your bag and snap — AI identifies each item for you.',
+    'onboarding.s2Title': 'Per-country verdicts',
+    'onboarding.s2Desc': 'Carry-on, checked, or prohibited — sorted out for your destination.',
+    'onboarding.s3Title': 'Save every trip',
+    'onboarding.s3Desc': 'Save results to reuse next time. AI verdicts are for reference.',
   },
 };
 
@@ -232,4 +260,10 @@ export function useT() {
 
 export function useLocale(): Locale {
   return useTripStore((s) => s.locale);
+}
+
+/** 부분 번역 데이터에서 현재 로케일 값을 고르되, 없으면 en→ko 순으로 폴백 */
+export type Localized = Partial<Record<Locale, string>>;
+export function pick(l: Localized, locale: Locale): string {
+  return l[locale] ?? l.en ?? l.ko ?? '';
 }

@@ -1,6 +1,7 @@
 import type { Country } from './countries';
 import type { Locale } from './i18n';
 import { mockScanFor, type ScanItem, type ScanResult } from './mockScan';
+import { groundingText } from './regulations';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -41,6 +42,7 @@ export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
         mimeType,
         locale,
         destination: { code: destination.code, name: locale === 'en' ? destination.nameEn : destination.name },
+        grounding: groundingText(destination.code),
       }),
       signal: controller.signal,
     });
