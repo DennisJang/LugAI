@@ -86,7 +86,7 @@ export const useTripStore = create<TripState>()(
     }),
     {
       name: 'lugai-store',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
       // 구버전에 저장된 Country(nameEn 없음) → 코드로 재해석해 보강
       migrate: (persisted) => {
