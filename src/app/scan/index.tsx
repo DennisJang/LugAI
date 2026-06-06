@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, PressableScale, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
+import { optimizeForAI } from '@/lib/image';
 import { countryName } from '@/lib/countries';
 import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
@@ -33,20 +34,24 @@ export default function CameraScreen() {
     setBusy(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.4, base64: true, skipProcessing: true });
-      if (photo?.base64) setPendingImage({ base64: photo.base64, mimeType: 'image/jpeg' });
-      goAnalyze(photo?.uri);
+      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.8, base64: true, skipProcessing: true });
+      const opt = await optimizeForAI(photo?.uri);
+      const base64 = opt.base64 ?? photo?.base64;
+      if (base64) setPendingImage({ base64, mimeType: 'image/jpeg' });
+      goAnalyze(opt.uri ?? photo?.uri);
     } catch {
       goAnalyze();
     }
   };
 
   const pickFromLibrary = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.4, base64: true });
+    const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.9, base64: true });
     if (!res.canceled) {
       const asset = res.assets[0];
-      if (asset?.base64) setPendingImage({ base64: asset.base64, mimeType: asset.mimeType ?? 'image/jpeg' });
-      goAnalyze(asset?.uri);
+      const opt = await optimizeForAI(asset?.uri);
+      const base64 = opt.base64 ?? asset?.base64;
+      if (base64) setPendingImage({ base64, mimeType: 'image/jpeg' });
+      goAnalyze(opt.uri ?? asset?.uri);
     }
   };
 
