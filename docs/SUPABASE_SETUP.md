@@ -51,6 +51,51 @@ npx supabase db push          # supabase/migrations/0001_rate_limits.sql 적용
 - 한도 조정: `supabase/functions/judge-luggage/index.ts`의 `RATE_MAX` / `RATE_WINDOW`.
 - 이미지 크기 상한도 내장(`MAX_IMAGE_CHARS`).
 
+---
+
+# 🔑 정밀도(P3) — 규정 코퍼스 + 동적 RAG grounding 활성화
+
+정적 `regulations.ts` grounding을 **DB 코퍼스(pgvector)** 로 옮겨, 앱 재배포 없이 규정을
+수정·확장(데이터 플라이휠)할 수 있게 합니다. **아래를 적용하기 전까지** judge-luggage는
+요청에 실린 정적 grounding으로 자동 폴백하므로 앱은 그대로 동작합니다(graceful).
+
+> 사용자가 미리 해둘 일 = **이 섹션 1~3단계**. 끝나면 알려주시면 라이브 경로를 검증합니다.
+
+### 1) 코퍼스 스키마 + 시드 적용
+```bash
+npx supabase db push          # supabase/migrations/0002_regulations_corpus.sql 적용
+# 또는 대시보드 → SQL Editor 에 0002_regulations_corpus.sql 내용 붙여넣기
+```
+- `vector`(pgvector) 확장 활성 + `reg_rules`/`country_rules`/`item_aliases`/`scans`/`feedback` 테이블 생성.
+- `regulations.ts`의 baseline·국가별 규정이 **텍스트로 시드**됩니다(임베딩은 NULL → 2단계에서 백필).
+- 전부 RLS 활성(클라이언트 직접 접근 차단, Edge Function이 service_role로만 접근).
+
+### 2) 임베딩 백필 함수 배포 + 1회 실행
+```bash
+npx supabase functions deploy embed-corpus --no-verify-jwt
+# 백필 1회 호출 (URL/ANON은 .env.local의 EXPO_PUBLIC_* 값)
+curl -X POST "$EXPO_PUBLIC_SUPABASE_URL/functions/v1/embed-corpus" \
+     -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY" \
+     -H "Authorization: Bearer $EXPO_PUBLIC_SUPABASE_ANON_KEY"
+# → {"embedded":{"reg_rules":8,"country_rules":14}} 이면 성공
+```
+- Supabase **내장 `gte-small`(384차원)** 사용 → 외부 임베딩 키 불필요.
+- 멱등: 다시 호출해도 이미 채워진 행은 건너뜀.
+
+### 3) judge-luggage 재배포 (동적 grounding 코드 반영)
+```bash
+npx supabase functions deploy judge-luggage --no-verify-jwt
+```
+- 이제 함수가 DB 코퍼스에서 grounding을 동적 생성합니다. DB/임베딩 미가용 시 정적 폴백.
+
+### 확인
+- 대시보드 SQL: `select count(*) from reg_rules where embedding is not null;` → 8.
+- 규정 수정 테스트: `country_rules` 한 행을 수정 → 앱 재배포 없이 판정 grounding에 반영되는지.
+- 벡터 검색 RPC `match_regulations(query_embedding, match_count)` 사용 가능(향후 per-item 시맨틱 검색용).
+
+---
+
 ## (선택) 향후
 - 익명 로그인 + verify_jwt로 인증 강화.
-- 규정 캐싱: `regulations` 테이블 시드 후 함수에서 우선 조회 → Claude는 보강용.
+- **P4 플라이휠**: 결과 화면 "정정/실제 통과" 피드백 → `feedback` 테이블 → 오판 패턴.
+- **2-stage 검색**: vision 식별 → per-item `match_regulations` top-k → 재판정(정밀도↑, +1 호출).

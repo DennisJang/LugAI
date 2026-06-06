@@ -23,11 +23,15 @@ const SECTIONS: { key: VerdictKey; titleKey: string }[] = [
   { key: 'success', titleKey: 'result.secSuccess' },
 ];
 
-/** 분석 결과 본문 — 요약 + 그룹 판정 + 펼침 항목 + 면책. (결과 화면·여행 상세 공용) */
-export function ScanResultView({ scan }: { scan: ScanResult }) {
+/**
+ * 분석 결과 본문 — 요약 + 그룹 판정 + 펼침 항목 + 면책. (결과 화면·여행 상세 공용)
+ * onRecapture가 주어진 라이브 결과 화면에서만 재촬영 배너를 노출(저장된 여행엔 미노출).
+ */
+export function ScanResultView({ scan, onRecapture }: { scan: ScanResult; onRecapture?: () => void }) {
   const { colors } = useTheme();
   const t = useT();
   const locale = useLocale();
+  const [recaptureDismissed, setRecaptureDismissed] = useState(false);
   const groups = groupByVerdict(scan.items);
   const counts = {
     success: groups.success.length,
@@ -58,6 +62,10 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
         </View>
       </Card>
 
+      {onRecapture && scan.needsRecapture && !recaptureDismissed ? (
+        <RecaptureBanner onPress={onRecapture} onDismiss={() => setRecaptureDismissed(true)} />
+      ) : null}
+
       {SECTIONS.map((sec) => {
         const items = groups[sec.key];
         if (!items.length) return null;
@@ -74,7 +82,7 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
             </View>
             <View style={styles.items}>
               {items.map((it) => (
-                <ScanItemCard key={it.id} item={it} sourceLabel={t('common.source')} />
+                <ScanItemCard key={it.id} item={it} />
               ))}
             </View>
           </View>
@@ -102,6 +110,40 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
   );
 }
 
+/** 저확신+고위험 항목이 있을 때 결과 상단에 뜨는 부드러운 재촬영 권유 카드(닫기 가능). */
+function RecaptureBanner({ onPress, onDismiss }: { onPress: () => void; onDismiss: () => void }) {
+  const { colors } = useTheme();
+  const t = useT();
+  return (
+    <Animated.View entering={FadeIn.duration(220)} style={styles.recaptureWrap}>
+      <PressableScale
+        haptic="light"
+        onPress={onPress}
+        accessibilityLabel={`${t('result.recaptureTitle')}, ${t('result.recaptureDesc')}`}
+        style={[styles.recapture, { backgroundColor: colors.primaryTint }]}>
+        <Ionicons name="scan-outline" size={22} color={colors.primary} />
+        <View style={styles.flex}>
+          <Text variant="bodyStrong" color="primary">
+            {t('result.recaptureTitle')}
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            {t('result.recaptureDesc')}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+      </PressableScale>
+      <PressableScale
+        haptic="light"
+        onPress={onDismiss}
+        hitSlop={12}
+        accessibilityLabel={t('common.close')}
+        style={styles.recaptureClose}>
+        <Ionicons name="close" size={14} color={colors.textTertiary} />
+      </PressableScale>
+    </Animated.View>
+  );
+}
+
 function CountStat({ n, label, color }: { n: number; label: string; color: string }) {
   return (
     <View style={styles.countItem}>
@@ -115,9 +157,11 @@ function CountStat({ n, label, color }: { n: number; label: string; color: strin
   );
 }
 
-function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: string }) {
+function ScanItemCard({ item }: { item: ScanItem }) {
   const { colors } = useTheme();
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
+  const lowConfidence = item.confidence === 'low';
   const rot = useSharedValue(0);
 
   useEffect(() => {
@@ -133,7 +177,7 @@ function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: stri
           haptic="light"
           pressScale={1}
           onPress={() => setExpanded((e) => !e)}
-          accessibilityLabel={`${item.name}, ${item.badge}`}
+          accessibilityLabel={`${item.name}, ${item.badge}${lowConfidence ? `, ${t('result.lowConfidence')}` : ''}`}
           style={styles.itemHeader}>
           <Text style={styles.itemEmoji}>{item.emoji}</Text>
           <View style={styles.flex}>
@@ -141,6 +185,14 @@ function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: stri
             <Text variant="caption" muted numberOfLines={expanded ? undefined : 1}>
               {item.reason}
             </Text>
+            {lowConfidence ? (
+              <View style={[styles.lowConfPill, { backgroundColor: colors.backgroundAlt }]}>
+                <Ionicons name="help-circle-outline" size={12} color={colors.textTertiary} />
+                <Text variant="footnote" color="textTertiary">
+                  {t('result.lowConfidence')}
+                </Text>
+              </View>
+            ) : null}
           </View>
           <VerdictBadge verdict={item.verdict} label={item.badge} size="sm" />
           <Animated.View style={chevStyle}>
@@ -160,8 +212,18 @@ function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: stri
                 </Text>
               </View>
             ) : null}
+            {item.measurement ? (
+              <Text variant="footnote" color="textTertiary">
+                {t('result.measured', { value: item.measurement })}
+              </Text>
+            ) : null}
+            {lowConfidence ? (
+              <Text variant="caption" color="textSecondary">
+                {t('result.lowConfidenceDetail')}
+              </Text>
+            ) : null}
             <Text variant="footnote" color="textTertiary">
-              {sourceLabel} · {item.source}
+              {t('common.source')} · {item.source}
             </Text>
           </Animated.View>
         )}
@@ -172,6 +234,19 @@ function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: stri
 
 const styles = StyleSheet.create({
   summary: { gap: space[4], marginBottom: space[6] },
+  recaptureWrap: { marginBottom: space[6] },
+  recapture: { flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[4], borderRadius: radius['2xl'] },
+  recaptureClose: { position: 'absolute', top: space[2], right: space[2], padding: 4 },
+  lowConfPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 4,
+    paddingVertical: 2,
+    paddingHorizontal: space[2],
+    borderRadius: radius.full,
+  },
   summaryHead: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   flag: { fontSize: 36 },
   counts: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space[4] },

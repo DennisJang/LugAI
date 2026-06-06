@@ -36,6 +36,17 @@ const TOOL = {
             detail: { type: 'string', description: 'Detailed explanation (2-3 sentences)' },
             caseNote: { type: 'string', description: 'Related case / tip (optional)' },
             source: { type: 'string', description: 'Basis/source (e.g., TSA 3-1-1, IATA, destination customs)' },
+            confidence: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description:
+                "Your honest confidence in THIS item's identification AND verdict. Use 'low' when the item is blurry, partially hidden, too small to read, or its capacity/volume label is unreadable; 'medium' when identified but a decisive number is uncertain; 'high' when clearly legible.",
+            },
+            measurement: {
+              type: 'string',
+              description:
+                "The capacity or volume you actually READ off the label, with unit (e.g. '20000mAh', '99Wh', '120ml'). Omit if no number is legible. Do NOT guess.",
+            },
           },
           required: ['emoji', 'name', 'verdict', 'badge', 'reason', 'detail', 'source'],
         },
@@ -63,6 +74,16 @@ Consider:
 - Carry-on vs checked baggage vs prohibited
 - Liquids 100ml rule (cabin), lithium/power banks (cabin only), blades (checked only), lighters (1 in cabin), e-cigarettes (cabin only)
 - Destination customs/quarantine (especially food/agricultural rules specific to ${dest.name})
+
+Read the labels (OCR matters most here):
+- Look for printed numbers on each item and READ them: battery capacity in Wh or mAh, liquid/gel volume in ml.
+- When you can read a number, put it in the "measurement" field (e.g. "20000mAh", "120ml") and reflect it in "name" and "reason".
+- Reason about that number against the rules: power banks ≤100Wh (~27,000mAh) are cabin-allowed; liquids must be ≤100ml per container.
+- You cannot zoom or crop. If the text is too small, blurry, or cut off to read with confidence, do NOT guess the number — say so and lower that item's confidence.
+
+Confidence (be honest):
+- Set "confidence" per item: "low" when the item is blurry, partially hidden, too small, or its capacity/volume label is unreadable; "medium" when identified but a decisive number is uncertain; "high" when clearly legible.
+- Do NOT change a verdict just because confidence is low — give your best verdict and report the low confidence honestly. Low-confidence items get flagged for a closer re-photo on the client side.
 
 verdict meaning: success = freely allowed (carry-on OK); warning = conditional (cabin only / checked only / quantity·volume limits / quarantine check); danger = prohibited or high seizure risk; info = declare recommended / needs further check.
 
@@ -94,6 +115,41 @@ async function rateLimitOk(ip: string): Promise<boolean> {
   }
 }
 
+/**
+ * DB 규정 코퍼스(reg_rules + country_rules)에서 동적 grounding 생성.
+ * 코퍼스를 DB로 이전해 앱 재배포 없이 규칙을 수정·확장(데이터 플라이휠)할 수 있게 한다.
+ * 테이블 미적용·임베딩 미백필·오류 시 앱이 보낸 정적 grounding(regulations.ts)으로 graceful 폴백.
+ * 참고: 벡터 RPC `match_regulations`는 코퍼스 확장 후 per-item 시맨틱 검색용으로 예약 — 아직 미연동.
+ *       현재는 (도착지) 구조화 조회. 동적 경로가 정적보다 부실해지지 않도록 country 행이 없으면 정적 폴백.
+ */
+async function fetchGrounding(destCode: string, fallback: string): Promise<string> {
+  if (!SUPABASE_URL || !SERVICE_ROLE) return fallback;
+  try {
+    const headers = { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` };
+    const [baseRes, ctryRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/reg_rules?select=body,badge,source&locale=eq.en`, { headers }),
+      fetch(
+        `${SUPABASE_URL}/rest/v1/country_rules?select=body,source&code=eq.${encodeURIComponent(destCode)}`,
+        { headers },
+      ),
+    ]);
+    if (!baseRes.ok) return fallback;
+    const base = (await baseRes.json()) as Array<{ body: string; badge: string; source: string }>;
+    if (!Array.isArray(base) || !base.length) return fallback;
+    const ctry = ctryRes.ok ? ((await ctryRes.json()) as Array<{ body: string; source: string }>) : [];
+    // 도착지 특이규정이 DB에 없으면 앱이 보낸 정적 grounding(국가 노트 포함)이 더 완전 → 폴백
+    if (!ctry.length && fallback) return fallback;
+    const baseText = base.map((r) => `- ${r.body} [${r.badge}] (src: ${r.source})`).join('\n');
+    const ctryText =
+      Array.isArray(ctry) && ctry.length
+        ? `\n\nDESTINATION-SPECIFIC (${destCode}):\n` + ctry.map((r) => `- ${r.body} (src: ${r.source})`).join('\n')
+        : '';
+    return `GENERAL BASELINE:\n${baseText}${ctryText}`;
+  } catch {
+    return fallback;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -108,10 +164,13 @@ Deno.serve(async (req: Request) => {
     const image = body?.image;
     const mimeType = typeof body?.mimeType === 'string' ? body.mimeType : 'image/jpeg';
     const locale = ['en', 'ja', 'zh'].includes(body?.locale) ? body.locale : 'ko';
-    const grounding = typeof body?.grounding === 'string' ? body.grounding.slice(0, 4000) : '';
+    const staticGrounding = typeof body?.grounding === 'string' ? body.grounding.slice(0, 4000) : '';
     const destination = body?.destination ?? { code: 'XX', name: 'destination' };
     if (!image || typeof image !== 'string') return json({ error: 'image_base64_required' }, 400);
     if (image.length > MAX_IMAGE_CHARS) return json({ error: 'image_too_large' }, 413);
+
+    // 동적 grounding(DB 코퍼스) → 미가용 시 정적 폴백
+    const grounding = await fetchGrounding(destination.code, staticGrounding);
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

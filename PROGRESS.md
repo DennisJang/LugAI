@@ -1,6 +1,6 @@
 # LugAI — 진행 상황 (자율 빌드 핸드오프)
 
-_업데이트: 2026-06-06_
+_업데이트: 2026-06-07_
 
 ## 한 줄 요약
 사진 한 장으로 여행 짐의 **나라별 반입 규정을 AI가 판정**하는 Expo(React Native) 앱.
@@ -21,13 +21,14 @@ _업데이트: 2026-06-06_
 - **온보딩** — 첫 실행 3슬라이드 + 게이트. ✅
 - **AI 남용 보호** — 이미지 크기 제한 · IP 레이트리밋(`supabase/migrations/0001_rate_limits.sql` 동봉). ✅
 - **단위·오프라인** — metric/imperial 토글, 오프라인 배너. ✅
-- **테스트·모니터링** — jest 유닛 테스트 12개 통과(`npm test`) · Sentry 가드 init(`EXPO_PUBLIC_SENTRY_DSN` 설정 시 활성). ✅
+- **테스트·모니터링** — jest 유닛 테스트 통과(`npm test`) · Sentry 가드 init(`EXPO_PUBLIC_SENTRY_DSN` 설정 시 활성). ✅
+- **정밀도 #25 (P2·P5·P3 골격)** — ① **P2**: OCR 강조 프롬프트 + 항목별 확신도(low/med/high) + 저확신·고위험 시 "가까이 다시 찍기" 배너·핀 + 측정값 노출(EF→앱→결과 UI, 4언어, mock에서도 동작). ② **P5**: eval 하니스(`src/lib/eval/` 21 라벨 케이스 + 스코어러 + danger 안전 불변식, 오프라인). ③ **P3 골격**: `0002_regulations_corpus.sql`(pgvector 코퍼스+RLS+시드+`match_regulations`) + `embed-corpus` EF(gte-small 백필) + `judge-luggage` 동적 grounding(정적 폴백). **배포 전까지 앱 정상**. 설계: `docs/PRECISION_ARCHITECTURE.md`. ✅(P3는 배포 대기)
 
 ## ⚠️ 사용자가 해야 할 일
-1. **AI 실연동 (2단계 — `docs/SUPABASE_SETUP.md`)**
-   - `npx supabase functions deploy judge-luggage --no-verify-jwt` (프로젝트 `anmmvrftdgnindvkylsr`)
-   - `npx supabase secrets set ANTHROPIC_API_KEY=...`
-   - 이 세션의 Supabase MCP가 해당 프로젝트에 접근 불가해 **자동 배포 못 함**. 배포 전까지 앱은 mock으로 정상 동작.
+1. **AI 실연동 + 정밀도 RAG 활성화 (`docs/SUPABASE_SETUP.md`)**
+   - P1: `npx supabase functions deploy judge-luggage --no-verify-jwt` + `npx supabase secrets set ANTHROPIC_API_KEY=...` (프로젝트 `anmmvrftdgnindvkylsr`)
+   - P3: `npx supabase db push`(0002 코퍼스) → `embed-corpus` 배포·백필 1회 → `judge-luggage` 재배포. (문서 "🔑 정밀도(P3)" 섹션)
+   - 이 세션의 Supabase MCP가 해당 프로젝트에 접근 불가해 **자동 배포 못 함**. 배포 전까지 앱은 mock + 정적 grounding으로 정상 동작. 세팅 완료 후 알려주면 라이브 검증.
 2. **support 이메일 교체** — `src/lib/legal.ts`·`STORE_LISTING.md`의 `support@lugai.app` → 실제 운영 이메일.
 3. **GitHub push** — 로컬 커밋 완료. `main` 직접 푸시는 권한 게이트로 보류 중. "push" 지시 주면 올림(또는 직접 `git push -u origin main`).
 4. **스토어 제출** — `STORE_LISTING.md` 카피 사용, 개인정보처리방침 URL 호스팅 후 입력, **프로덕션 빌드**에서 스크린샷 캡처(현재 dev 화면엔 Expo Go 톱니가 보임 — 실제 빌드엔 없음).

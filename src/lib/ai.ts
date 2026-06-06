@@ -1,12 +1,13 @@
 import { countryName, type Country } from './countries';
 import type { Locale } from './i18n';
-import { mockScanFor, type ScanItem, type ScanResult } from './mockScan';
+import { computeNeedsRecapture, mockScanFor, type ScanItem, type ScanResult } from './mockScan';
 import { groundingText } from './regulations';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const TIMEOUT_MS = 30000;
 const VALID_VERDICTS = ['success', 'warning', 'danger', 'info'];
+const VALID_CONFIDENCE = ['low', 'medium', 'high'];
 
 export interface JudgeParams {
   base64?: string;
@@ -50,7 +51,7 @@ export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
     const data = (await res.json()) as { items?: unknown };
     const items = normalizeItems(data?.items);
     if (!items.length) throw new Error('no items');
-    return { destination, scannedAt, items };
+    return { destination, scannedAt, items, needsRecapture: computeNeedsRecapture(items) };
   } catch {
     return mockScanFor(destination, scannedAt, locale);
   } finally {
@@ -66,6 +67,13 @@ function normalizeItems(raw: unknown): ScanItem[] {
       ? (o.verdict as ScanItem['verdict'])
       : 'info';
     const emoji = typeof o.emoji === 'string' && o.emoji.trim() ? o.emoji : '📦';
+    const confidence = VALID_CONFIDENCE.includes(String(o.confidence))
+      ? (o.confidence as ScanItem['confidence'])
+      : 'high';
+    const measurement =
+      typeof o.measurement === 'string' && o.measurement.trim()
+        ? o.measurement.trim().slice(0, 24)
+        : undefined;
     return {
       id: `ai-${i}`,
       emoji,
@@ -76,6 +84,8 @@ function normalizeItems(raw: unknown): ScanItem[] {
       detail: String(o.detail ?? ''),
       caseNote: o.caseNote ? String(o.caseNote) : undefined,
       source: String(o.source ?? ''),
+      confidence,
+      measurement,
     };
   });
 }

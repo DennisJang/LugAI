@@ -3,6 +3,9 @@ import type { VerdictKey } from '@/design';
 import type { Country } from './countries';
 import { pick, type Locale } from './i18n';
 
+/** 항목별 AI 확신도 — 정직한 자기보고(흐릿/판독불가 시 low). enum이 0~1보다 캘리브레이션 안정적. */
+export type Confidence = 'low' | 'medium' | 'high';
+
 export interface ScanItem {
   id: string;
   emoji: string;
@@ -13,12 +16,18 @@ export interface ScanItem {
   detail: string;
   caseNote?: string;
   source: string;
+  /** AI가 이 항목의 식별·판정에 대해 보고한 확신도 (없으면 high로 간주) */
+  confidence?: Confidence;
+  /** 라벨에서 실제로 읽은 수치(단위 포함). 예: '20,000mAh', '120ml' */
+  measurement?: string;
 }
 
 export interface ScanResult {
   destination: Country;
   items: ScanItem[];
   scannedAt: string;
+  /** 저확신 + 고위험 항목이 있어 더 가까이 재촬영을 권하는지 (영속화 안 함) */
+  needsRecapture?: boolean;
 }
 
 type L = { ko: string; en: string };
@@ -31,12 +40,16 @@ interface BaseItem {
   detail: L;
   caseNote?: L;
   source: L;
+  confidence?: Confidence;
+  measurement?: string;
 }
 
 const BASE: BaseItem[] = [
   {
     emoji: '🔋',
     verdict: 'warning',
+    confidence: 'low',
+    measurement: '20,000mAh',
     name: { ko: '보조배터리 20,000mAh', en: '20,000mAh power bank' },
     badge: { ko: '기내만', en: 'Cabin only' },
     reason: {
@@ -53,6 +66,8 @@ const BASE: BaseItem[] = [
   {
     emoji: '🧴',
     verdict: 'danger',
+    confidence: 'medium',
+    measurement: '120ml',
     name: { ko: '토너 120ml', en: '120ml toner' },
     badge: { ko: '100ml 초과', en: 'Over 100ml' },
     reason: { ko: '기내 액체는 용기당 100ml 이하만 허용', en: 'Cabin liquids must be 100ml or less per container' },
@@ -96,6 +111,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '☀️',
     verdict: 'success',
+    measurement: '50ml',
     name: { ko: '선크림 50ml', en: '50ml sunscreen' },
     badge: { ko: '기내 OK', en: 'Carry-on OK' },
     reason: { ko: '100ml 이하 액체 — 기내 반입 가능', en: 'Liquid 100ml or less — allowed in the cabin' },
@@ -136,6 +152,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '🔥',
     verdict: 'danger',
+    confidence: 'low',
     name: { ko: '라이터', en: 'Lighter' },
     badge: { ko: '기내 1개만', en: '1 in cabin' },
     reason: {
@@ -150,7 +167,7 @@ const BASE: BaseItem[] = [
   },
 ];
 
-/** 도착지·언어 기반 mock 분석 결과 (P2에서 Claude vision 결과로 대체). */
+/** 도착지·언어 기반 mock 분석 결과 (실 AI 배포 전 폴백). */
 export function mockScanFor(destination: Country, scannedAt: string, locale: Locale = 'ko'): ScanResult {
   const items: ScanItem[] = BASE.map((b, i) => ({
     id: `item-${i}`,
@@ -162,6 +179,8 @@ export function mockScanFor(destination: Country, scannedAt: string, locale: Loc
     detail: pick(b.detail, locale),
     caseNote: b.caseNote ? pick(b.caseNote, locale) : undefined,
     source: pick(b.source, locale),
+    confidence: b.confidence ?? 'high',
+    measurement: b.measurement,
   }));
 
   // 검역 엄격국: 김치 → 금지
@@ -179,7 +198,17 @@ export function mockScanFor(destination: Country, scannedAt: string, locale: Loc
     }
   }
 
-  return { destination, items, scannedAt };
+  return { destination, items, scannedAt, needsRecapture: computeNeedsRecapture(items) };
+}
+
+/**
+ * 저확신(low)이면서 결과가 중요한(danger/warning) 항목이 있으면 재촬영 권유.
+ * 흐릿한 저위험 항목(예: 선크림)만으로는 재촬영을 권하지 않는다.
+ */
+export function computeNeedsRecapture(items: ScanItem[]): boolean {
+  return items.some(
+    (it) => it.confidence === 'low' && (it.verdict === 'danger' || it.verdict === 'warning'),
+  );
 }
 
 export const VERDICT_ORDER: VerdictKey[] = ['danger', 'warning', 'success', 'info'];

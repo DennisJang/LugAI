@@ -50,7 +50,7 @@ export default function ResultScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <ScanResultView scan={scan} />
+        <ScanResultView scan={scan} onRecapture={() => router.replace('/scan')} />
       </ScrollView>
 
       <View style={[styles.bottomBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.background }]}>

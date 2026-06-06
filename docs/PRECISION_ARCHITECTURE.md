@@ -1,6 +1,6 @@
-# LugAI 정밀도 아키텍처 (리서치 + 설계) — 작업중
+# LugAI 정밀도 아키텍처 (리서치 + 설계 + 구현) — 진행중
 
-_작성: 2026-06-06 / 상태: 설계 초안(구현 전). 작업 #25._
+_작성: 2026-06-06 / 갱신: 2026-06-07 / 상태: P2·P5 구현 완료, P3 골격(코드/SQL) 완료·배포 대기. 작업 #25._
 
 > 방향(사용자): 모델만 키우지 말고 → **레퍼런스 조사 → 케이스 분류 → 본질 도출 → 목적 최적 파이프라인 설계 → 자체 RAG(쓸수록 정밀↑ 데이터 플라이휠)**.
 
@@ -57,11 +57,11 @@ _작성: 2026-06-06 / 상태: 설계 초안(구현 전). 작업 #25._
 **프라이버시**: 이미지 미저장(현행 유지), 익명 ID, 옵트인, 개인정보처리방침 반영 필요(계정 도입 시 동기화 별도).
 
 ## 6. 단계 실행안
-- **P1**: 실제 AI 배포(`docs/SUPABASE_SETUP.md` 2줄) — 측정 시작점.
-- **P2**: OCR 강조 프롬프트 + 신뢰도 필드 + "가까이 다시 찍기" 루프 + (옵션)다중 촬영.
-- **P3**: pgvector 규정 코퍼스 구축 → Edge Function 동적 검색 grounding으로 교체.
-- **P4**: 결과 화면에 "정정/실제 통과" 피드백 → `feedback` 테이블 → 플라이휠 v1.
-- **P5**: eval 하니스(20~50 라벨 케이스) → 파이프라인 변경마다 정밀도 비교.
+- **P1**(사용자): 실제 AI 배포(`docs/SUPABASE_SETUP.md`) — 측정 시작점. ⏳ 배포 대기.
+- **P2** ✅: OCR 강조 프롬프트 + 항목별 `confidence`(low/medium/high) + 저확신·고위험 시 "가까이 다시 찍기" 루프. EF→`ai.ts`→`mockScan`→`ScanResultView`(4언어). 저확신은 verdict 다운그레이드 X(유지+주석). mock에서도 동작.
+- **P3 골격** ✅(배포 대기): `0002_regulations_corpus.sql`(pgvector 코퍼스+RLS+시드+`match_regulations` RPC) + `embed-corpus` EF(gte-small 384d 백필) + `judge-luggage` 동적 grounding(정적 폴백). 코퍼스를 DB로 이전 → 앱 재배포 없이 규칙 수정.
+- **P4**(다음): 결과 화면 "정정/실제 통과" 피드백 → `feedback` 테이블 → 플라이휠 v1. (테이블은 0002에 생성됨)
+- **P5** ✅: eval 하니스(`src/lib/eval/`, 21 라벨 케이스 + 플러그블 predictor + 스코어러 + danger 안전 불변식). 결정적 규칙 레이어 회귀 net, 오프라인. 배포 후 `aiPredictor`로 전 파이프라인 정밀도 수치화.
 
 ## 7. 현재 코드 연결점
 - `src/lib/regulations.ts` (시드) → P3에서 DB/임베딩으로 이전(시드는 유지).
@@ -69,5 +69,6 @@ _작성: 2026-06-06 / 상태: 설계 초안(구현 전). 작업 #25._
 - `src/lib/mockScan.ts` → eval/플라이휠 라벨 케이스의 출발점으로 재활용 가능.
 
 ## 미완 / 다음 세션에서 이어갈 것
-- 리서치 2건 완료(경쟁앱 인식방식, RAG/환각). **남은 조사**: 권위 규정 데이터 소스(IATA/TSA/각국) 구체화, pgvector+Supabase 셋업 디테일, 비전 2-stage(검출→크롭→식별) 적용 여부.
-- 그 후: 이 설계로 **P1(배포)→P2** 부터 구현 착수. (사용자 검토 후 우선순위 확정)
+- **사용자 액션(P1 + P3 활성화)**: `docs/SUPABASE_SETUP.md`의 "🔑 정밀도(P3)" 섹션 — `db push`(0002) → `embed-corpus` 배포·백필 → `judge-luggage` 재배포 → `ANTHROPIC_API_KEY` 시크릿. 끝나면 라이브 경로 검증.
+- **검증(배포 후)**: 실제 AI 응답에 `confidence`/`measurement` 반영 확인, 동적 grounding 로그 확인, DB 끊김 시 정적 폴백 확인, `aiPredictor`로 P5 정밀도 측정.
+- **다음 구현**: P4 피드백 UI(정정/실제 통과 → `feedback`), 2-stage 시맨틱 검색(vision 식별→per-item `match_regulations` top-k→재판정), 모델 티어 승격(애매/고위험 Opus), 코퍼스 단일소스 sync 스크립트(`regulations.ts` ↔ 0002 시드).
