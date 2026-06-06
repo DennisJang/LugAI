@@ -1,21 +1,17 @@
 import type { VerdictKey } from '@/design';
 
 import type { Country } from './countries';
+import type { Locale } from './i18n';
 
 export interface ScanItem {
   id: string;
   emoji: string;
   name: string;
   verdict: VerdictKey;
-  /** 짧은 판정 라벨 (예: 기내만, 100ml 초과) */
   badge: string;
-  /** 한 줄 사유 */
   reason: string;
-  /** 펼침 시 상세 설명 */
   detail: string;
-  /** 재밌는/위험했던 사례 TMI (선택) */
   caseNote?: string;
-  /** 근거 출처 */
   source: string;
 }
 
@@ -25,98 +21,161 @@ export interface ScanResult {
   scannedAt: string;
 }
 
-const BASE: Omit<ScanItem, 'id'>[] = [
+type L = { ko: string; en: string };
+interface BaseItem {
+  emoji: string;
+  verdict: VerdictKey;
+  name: L;
+  badge: L;
+  reason: L;
+  detail: L;
+  caseNote?: L;
+  source: L;
+}
+
+const BASE: BaseItem[] = [
   {
     emoji: '🔋',
-    name: '보조배터리 20,000mAh',
     verdict: 'warning',
-    badge: '기내만',
-    reason: '리튬 배터리는 위탁 금지 — 기내에만 반입 가능',
-    detail:
-      '100Wh(약 27,000mAh) 이하는 기내 반입 가능. 20,000mAh는 허용 범위지만 항공사별로 보통 2개까지만 허용돼요.',
-    caseNote: '게이트에서 3개째는 회수되는 경우가 많아요.',
-    source: 'IATA / 항공사 공통',
+    name: { ko: '보조배터리 20,000mAh', en: '20,000mAh power bank' },
+    badge: { ko: '기내만', en: 'Cabin only' },
+    reason: {
+      ko: '리튬 배터리는 위탁 금지 — 기내에만 반입 가능',
+      en: 'Lithium batteries are banned from checked bags — carry-on only',
+    },
+    detail: {
+      ko: '100Wh(약 27,000mAh) 이하는 기내 반입 가능. 20,000mAh는 허용 범위지만 항공사별로 보통 2개까지만 허용돼요.',
+      en: 'Under 100Wh (~27,000mAh) is allowed in the cabin. 20,000mAh is fine, but most airlines allow up to 2.',
+    },
+    caseNote: { ko: '게이트에서 3개째는 회수되는 경우가 많아요.', en: 'A third one is often confiscated at the gate.' },
+    source: { ko: 'IATA / 항공사 공통', en: 'IATA / airlines' },
   },
   {
     emoji: '🧴',
-    name: '토너 120ml',
     verdict: 'danger',
-    badge: '100ml 초과',
-    reason: '기내 액체는 용기당 100ml 이하만 허용',
-    detail:
-      '내용물이 적어도 용기 표기 용량이 기준이라 120ml 용기는 기내 반입 불가. 위탁 수하물로 부치세요.',
-    caseNote: '환승 시 면세 액체도 100ml 룰에 걸려 압수되곤 해요.',
-    source: 'TSA 3-1-1 / ICAO',
+    name: { ko: '토너 120ml', en: '120ml toner' },
+    badge: { ko: '100ml 초과', en: 'Over 100ml' },
+    reason: { ko: '기내 액체는 용기당 100ml 이하만 허용', en: 'Cabin liquids must be 100ml or less per container' },
+    detail: {
+      ko: '내용물이 적어도 용기 표기 용량이 기준이라 120ml 용기는 기내 반입 불가. 위탁 수하물로 부치세요.',
+      en: "The container size counts, not how much is left — a 120ml bottle can't go in the cabin. Pack it in checked baggage.",
+    },
+    caseNote: {
+      ko: '환승 시 면세 액체도 100ml 룰에 걸려 압수되곤 해요.',
+      en: 'Even duty-free liquids can be seized at a transfer under the 100ml rule.',
+    },
+    source: { ko: 'TSA 3-1-1 / ICAO', en: 'TSA 3-1-1 / ICAO' },
   },
   {
     emoji: '🔪',
-    name: '맥가이버칼',
     verdict: 'warning',
-    badge: '위탁만',
-    reason: '날붙이는 기내 반입 불가 — 위탁 수하물로만',
-    detail: '날 길이와 무관하게 칼류는 기내 금지. 위탁 수하물에 넣으면 문제없어요.',
-    source: '국토부 항공보안 / TSA',
+    name: { ko: '맥가이버칼', en: 'Swiss army knife' },
+    badge: { ko: '위탁만', en: 'Checked only' },
+    reason: { ko: '날붙이는 기내 반입 불가 — 위탁 수하물로만', en: 'Blades are banned from the cabin — checked baggage only' },
+    detail: {
+      ko: '날 길이와 무관하게 칼류는 기내 금지. 위탁 수하물에 넣으면 문제없어요.',
+      en: "Knives are banned in the cabin regardless of blade length. They're fine in checked baggage.",
+    },
+    source: { ko: '국토부 항공보안 / TSA', en: 'Aviation security / TSA' },
   },
   {
     emoji: '💨',
-    name: '전자담배',
     verdict: 'warning',
-    badge: '기내만',
-    reason: '전자담배·예비 배터리는 위탁 금지 — 기내 휴대만',
-    detail: '기내 휴대는 가능하나 기내에서 사용·충전은 금지. 위탁 수하물엔 넣을 수 없어요.',
-    source: 'IATA',
+    name: { ko: '전자담배', en: 'E-cigarette' },
+    badge: { ko: '기내만', en: 'Cabin only' },
+    reason: {
+      ko: '전자담배·예비 배터리는 위탁 금지 — 기내 휴대만',
+      en: 'Vapes and spare batteries are banned from checked bags — carry-on only',
+    },
+    detail: {
+      ko: '기내 휴대는 가능하나 기내에서 사용·충전은 금지. 위탁 수하물엔 넣을 수 없어요.',
+      en: 'Allowed in the cabin, but using or charging it onboard is prohibited. Cannot go in checked baggage.',
+    },
+    source: { ko: 'IATA', en: 'IATA' },
   },
   {
     emoji: '☀️',
-    name: '선크림 50ml',
     verdict: 'success',
-    badge: '기내 OK',
-    reason: '100ml 이하 액체 — 기내 반입 가능',
-    detail: '투명 지퍼백(1L)에 담으면 기내 반입 OK.',
-    source: 'TSA 3-1-1',
+    name: { ko: '선크림 50ml', en: '50ml sunscreen' },
+    badge: { ko: '기내 OK', en: 'Carry-on OK' },
+    reason: { ko: '100ml 이하 액체 — 기내 반입 가능', en: 'Liquid 100ml or less — allowed in the cabin' },
+    detail: { ko: '투명 지퍼백(1L)에 담으면 기내 반입 OK.', en: 'Fine in the cabin inside a clear 1L zip bag.' },
+    source: { ko: 'TSA 3-1-1', en: 'TSA 3-1-1' },
   },
   {
     emoji: '✂️',
-    name: '손톱깎이',
     verdict: 'success',
-    badge: '기내 OK',
-    reason: '소형 손톱깎이는 기내 허용',
-    detail: '날이 짧은 손톱깎이는 대부분 기내 반입 가능해요.',
-    source: 'TSA',
+    name: { ko: '손톱깎이', en: 'Nail clippers' },
+    badge: { ko: '기내 OK', en: 'Carry-on OK' },
+    reason: { ko: '소형 손톱깎이는 기내 허용', en: 'Small nail clippers are allowed in the cabin' },
+    detail: {
+      ko: '날이 짧은 손톱깎이는 대부분 기내 반입 가능해요.',
+      en: 'Clippers with short blades are generally allowed in the cabin.',
+    },
+    source: { ko: 'TSA', en: 'TSA' },
   },
   {
     emoji: '🥬',
-    name: '포장 김치',
     verdict: 'warning',
-    badge: '검역 확인',
-    reason: '액체류로 간주될 수 있고, 도착지 검역 대상',
-    detail: '국물 있는 김치는 100ml 룰 적용. 도착지에 따라 반입 신고가 필요해요.',
-    caseNote: '호주·뉴질랜드는 미신고 식품에 큰 벌금이 있어요.',
-    source: '도착지 세관·검역',
+    name: { ko: '포장 김치', en: 'Packaged kimchi' },
+    badge: { ko: '검역 확인', en: 'Check quarantine' },
+    reason: {
+      ko: '액체류로 간주될 수 있고, 도착지 검역 대상',
+      en: 'May count as a liquid and is subject to destination quarantine',
+    },
+    detail: {
+      ko: '국물 있는 김치는 100ml 룰 적용. 도착지에 따라 반입 신고가 필요해요.',
+      en: 'Kimchi with liquid falls under the 100ml rule. Declaration may be required depending on the destination.',
+    },
+    caseNote: {
+      ko: '호주·뉴질랜드는 미신고 식품에 큰 벌금이 있어요.',
+      en: 'Australia and New Zealand fine undeclared food heavily.',
+    },
+    source: { ko: '도착지 세관·검역', en: 'Destination customs / quarantine' },
   },
   {
     emoji: '🔥',
-    name: '라이터',
     verdict: 'danger',
-    badge: '기내 1개만',
-    reason: '라이터는 위탁 금지, 기내도 1개만 휴대 가능',
-    detail: '위탁 수하물엔 넣을 수 없어요. 기내 휴대는 1인 1개로 제한돼요.',
-    source: '국토부 / FAA',
+    name: { ko: '라이터', en: 'Lighter' },
+    badge: { ko: '기내 1개만', en: '1 in cabin' },
+    reason: {
+      ko: '라이터는 위탁 금지, 기내도 1개만 휴대 가능',
+      en: 'Lighters are banned from checked bags; only 1 may be carried on your person',
+    },
+    detail: {
+      ko: '위탁 수하물엔 넣을 수 없어요. 기내 휴대는 1인 1개로 제한돼요.',
+      en: 'Cannot go in checked baggage. Limited to one per person carried on.',
+    },
+    source: { ko: '국토부 / FAA', en: 'Aviation authority / FAA' },
   },
 ];
 
-/** 도착지 기반 mock 분석 결과 (P2에서 Claude vision 결과로 대체). */
-export function mockScanFor(destination: Country, scannedAt: string): ScanResult {
-  const items: ScanItem[] = BASE.map((b, i) => ({ ...b, id: `item-${i}` }));
+/** 도착지·언어 기반 mock 분석 결과 (P2에서 Claude vision 결과로 대체). */
+export function mockScanFor(destination: Country, scannedAt: string, locale: Locale = 'ko'): ScanResult {
+  const items: ScanItem[] = BASE.map((b, i) => ({
+    id: `item-${i}`,
+    emoji: b.emoji,
+    verdict: b.verdict,
+    name: b.name[locale],
+    badge: b.badge[locale],
+    reason: b.reason[locale],
+    detail: b.detail[locale],
+    caseNote: b.caseNote?.[locale],
+    source: b.source[locale],
+  }));
 
-  // 도착지별 예외 반영 (검역 엄격국)
+  // 검역 엄격국: 김치 → 금지
   if (['AU', 'NZ'].includes(destination.code)) {
-    const kimchi = items.find((i) => i.name === '포장 김치');
+    const kimchi = items.find((it) => it.id === 'item-6');
     if (kimchi) {
       kimchi.verdict = 'danger';
-      kimchi.badge = '반입 금지';
-      kimchi.reason = '검역 매우 엄격 — 미신고 식품 반입 금지';
-      kimchi.caseNote = '실제 $300+ 벌금 사례가 많아요.';
+      kimchi.badge = locale === 'en' ? 'Prohibited' : '반입 금지';
+      kimchi.reason =
+        locale === 'en'
+          ? 'Very strict quarantine — undeclared food is prohibited'
+          : '검역 매우 엄격 — 미신고 식품 반입 금지';
+      kimchi.caseNote =
+        locale === 'en' ? 'Real cases of $300+ fines are common.' : '실제 $300+ 벌금 사례가 많아요.';
     }
   }
 

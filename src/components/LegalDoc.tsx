@@ -4,10 +4,12 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PressableScale, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
+import { useT } from '@/lib/i18n';
 import type { LegalDocData } from '@/lib/legal';
 
 export function LegalDoc({ doc }: { doc: LegalDocData }) {
   const { colors } = useTheme();
+  const t = useT();
   return (
     <Screen edges={['top']} padded={false}>
       <View style={styles.header}>
@@ -15,7 +17,7 @@ export function LegalDoc({ doc }: { doc: LegalDocData }) {
           haptic="light"
           onPress={() => router.back()}
           hitSlop={12}
-          accessibilityLabel="뒤로"
+          accessibilityLabel={t('common.back')}
           style={[styles.back, { backgroundColor: colors.backgroundAlt }]}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </PressableScale>
@@ -27,7 +29,7 @@ export function LegalDoc({ doc }: { doc: LegalDocData }) {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text variant="caption" color="textTertiary" style={styles.updated}>
-          최종 업데이트 · {doc.updated}
+          {t('legal.updated')} · {doc.updated}
         </Text>
         <Text variant="callout" muted style={styles.intro}>
           {doc.intro}

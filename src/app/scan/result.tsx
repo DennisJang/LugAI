@@ -6,10 +6,12 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ScanResultView } from '@/components/ScanResultView';
 import { Button, PressableScale, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
+import { useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
 export default function ResultScreen() {
   const { colors } = useTheme();
+  const t = useT();
   const scan = useTripStore((s) => s.currentScan);
   const addTrip = useTripStore((s) => s.addTrip);
 
@@ -25,8 +27,8 @@ export default function ResultScreen() {
     return (
       <Screen edges={['top']}>
         <View style={styles.fallback}>
-          <Text variant="headline">분석 결과가 없어요</Text>
-          <Button label="홈으로" size="md" fullWidth={false} onPress={() => router.dismissAll()} />
+          <Text variant="headline">{t('result.noResult')}</Text>
+          <Button label={t('common.goHome')} size="md" fullWidth={false} onPress={() => router.dismissAll()} />
         </View>
       </Screen>
     );
@@ -39,11 +41,11 @@ export default function ResultScreen() {
           haptic="light"
           onPress={() => router.dismissAll()}
           hitSlop={12}
-          accessibilityLabel="닫기"
+          accessibilityLabel={t('common.close')}
           style={[styles.closeBtn, { backgroundColor: colors.backgroundAlt }]}>
           <Ionicons name="close" size={20} color={colors.textSecondary} />
         </PressableScale>
-        <Text variant="headline">분석 완료</Text>
+        <Text variant="headline">{t('result.complete')}</Text>
         <View style={styles.closeBtn} />
       </View>
 
@@ -53,11 +55,11 @@ export default function ResultScreen() {
 
       <View style={[styles.bottomBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.background }]}>
         <View style={styles.flex}>
-          <Button label="다시 스캔" variant="secondary" size="md" onPress={() => router.replace('/scan')} />
+          <Button label={t('result.rescan')} variant="secondary" size="md" onPress={() => router.replace('/scan')} />
         </View>
         <View style={styles.flex2}>
           <Button
-            label="여행에 저장"
+            label={t('result.save')}
             size="md"
             onPress={handleSave}
             leftIcon={<Ionicons name="bookmark" size={18} color={colors.onPrimary} />}

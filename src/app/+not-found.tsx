@@ -3,22 +3,24 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text } from '@/components/ui';
 import { space } from '@/design';
+import { useT } from '@/lib/i18n';
 
 export default function NotFoundScreen() {
+  const t = useT();
   return (
     <>
-      <Stack.Screen options={{ title: '페이지 없음' }} />
+      <Stack.Screen options={{ title: t('notfound.title') }} />
       <Screen>
         <View style={styles.body}>
           <Text style={styles.emoji}>🧭</Text>
           <Text variant="title3" center>
-            페이지를 찾을 수 없어요
+            {t('notfound.title')}
           </Text>
           <Text variant="callout" muted center>
-            요청하신 화면이 존재하지 않아요.
+            {t('notfound.desc')}
           </Text>
           <View style={styles.cta}>
-            <Button label="홈으로" size="md" fullWidth={false} onPress={() => router.replace('/')} />
+            <Button label={t('common.goHome')} size="md" fullWidth={false} onPress={() => router.replace('/')} />
           </View>
         </View>
       </Screen>

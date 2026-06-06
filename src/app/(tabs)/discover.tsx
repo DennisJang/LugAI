@@ -3,100 +3,132 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card, Chip, Divider, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
 import { space, useTheme, type VerdictKey } from '@/design';
+import { useLocale, useT } from '@/lib/i18n';
 
-const CATEGORIES = ['전체', '액체', '배터리', '식품', '날붙이', '세관'];
+type L = { ko: string; en: string };
 
-const CASES: { emoji: string; title: string; place: string; verdict: VerdictKey; tag: string }[] = [
-  { emoji: '🧴', title: '면세 향수 3개, 환승에서 압수', place: '🇫🇷 파리 경유', verdict: 'danger', tag: '액체' },
-  { emoji: '🔋', title: '보조배터리 2개째는 회수당해요', place: '🇯🇵 도쿄', verdict: 'warning', tag: '배터리' },
-  { emoji: '🥩', title: '육포 반입하다 검역 벌금 $300', place: '🇦🇺 시드니', verdict: 'danger', tag: '식품' },
-  { emoji: '🥬', title: '의외로 통과! 진공포장 김치', place: '🇺🇸 LA', verdict: 'success', tag: '식품' },
+const CATEGORIES: L[] = [
+  { ko: '전체', en: 'All' },
+  { ko: '액체', en: 'Liquids' },
+  { ko: '배터리', en: 'Batteries' },
+  { ko: '식품', en: 'Food' },
+  { ko: '날붙이', en: 'Blades' },
+  { ko: '세관', en: 'Customs' },
 ];
 
-const COUNTRIES = [
-  { flag: '🇯🇵', name: '일본', rule: '주요 규정 8개' },
-  { flag: '🇺🇸', name: '미국', rule: 'TSA 3-1-1 룰' },
-  { flag: '🇦🇺', name: '호주', rule: '검역 매우 엄격' },
-  { flag: '🇪🇺', name: '유럽연합', rule: '액체 100ml 제한' },
+const CASES: { emoji: string; title: L; place: L; verdict: VerdictKey; tag: L }[] = [
+  {
+    emoji: '🧴',
+    title: { ko: '면세 향수 3개, 환승에서 압수', en: 'Three duty-free perfumes seized at transfer' },
+    place: { ko: '🇫🇷 파리 경유', en: '🇫🇷 Paris transfer' },
+    verdict: 'danger',
+    tag: { ko: '액체', en: 'Liquids' },
+  },
+  {
+    emoji: '🔋',
+    title: { ko: '보조배터리 2개째는 회수당해요', en: 'A second power bank gets taken' },
+    place: { ko: '🇯🇵 도쿄', en: '🇯🇵 Tokyo' },
+    verdict: 'warning',
+    tag: { ko: '배터리', en: 'Battery' },
+  },
+  {
+    emoji: '🥩',
+    title: { ko: '육포 반입하다 검역 벌금 $300', en: '$300 quarantine fine for beef jerky' },
+    place: { ko: '🇦🇺 시드니', en: '🇦🇺 Sydney' },
+    verdict: 'danger',
+    tag: { ko: '식품', en: 'Food' },
+  },
+  {
+    emoji: '🥬',
+    title: { ko: '의외로 통과! 진공포장 김치', en: 'Surprisingly OK: vacuum-packed kimchi' },
+    place: { ko: '🇺🇸 LA', en: '🇺🇸 LA' },
+    verdict: 'success',
+    tag: { ko: '식품', en: 'Food' },
+  },
+];
+
+const RULE_COUNTRIES: { flag: string; name: L; rule: L }[] = [
+  { flag: '🇯🇵', name: { ko: '일본', en: 'Japan' }, rule: { ko: '주요 규정 8개', en: '8 key rules' } },
+  { flag: '🇺🇸', name: { ko: '미국', en: 'United States' }, rule: { ko: 'TSA 3-1-1 룰', en: 'TSA 3-1-1' } },
+  { flag: '🇦🇺', name: { ko: '호주', en: 'Australia' }, rule: { ko: '검역 매우 엄격', en: 'Very strict quarantine' } },
+  { flag: '🇪🇺', name: { ko: '유럽연합', en: 'European Union' }, rule: { ko: '액체 100ml 제한', en: '100ml liquid limit' } },
 ];
 
 export default function DiscoverScreen() {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
 
   return (
     <Screen scroll>
       <View style={styles.header}>
-        <Text variant="title1">둘러보기</Text>
+        <Text variant="title1">{t('explore.title')}</Text>
         <Text variant="callout" muted>
-          여행 전 알아두면 좋은 규정과 사례
+          {t('explore.subtitle')}
         </Text>
       </View>
 
-      {/* 이번 주 피처 */}
       <Card style={[styles.featured, { backgroundColor: colors.primaryTint }]}>
         <View style={styles.featuredTop}>
           <View style={[styles.tag, { backgroundColor: colors.surface }]}>
             <Text variant="footnote" color="primary">
-              이번 주 사례
+              {t('explore.weekly')}
             </Text>
           </View>
           <Text style={styles.featuredEmoji}>🧳</Text>
         </View>
-        <Text variant="title3">"기내에 김치 가져가도 돼요?"</Text>
+        <Text variant="title3">{t('explore.featuredTitle')}</Text>
         <Text variant="callout" muted>
-          액체류로 분류될 수 있어요. 100ml 룰부터 검역까지 한 번에 정리했어요.
+          {t('explore.featuredDesc')}
         </Text>
       </Card>
 
-      {/* 카테고리 */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chips}
         style={styles.chipScroll}>
         {CATEGORIES.map((c, i) => (
-          <Chip key={c} label={c} active={i === 0} />
+          <Chip key={c.en} label={c[locale]} active={i === 0} />
         ))}
       </ScrollView>
 
-      {/* 사례 */}
       <Text variant="headline" style={styles.sectionTitle}>
-        실제 압수 사례
+        {t('explore.casesTitle')}
       </Text>
       <View style={styles.caseList}>
         {CASES.map((c) => (
-          <PressableScale key={c.title} haptic="light" pressScale={0.98}>
+          <PressableScale key={c.title.en} haptic="light" pressScale={0.98}>
             <Card style={styles.caseCard}>
               <Text style={styles.caseEmoji}>{c.emoji}</Text>
               <View style={styles.flex}>
                 <Text variant="bodyStrong" numberOfLines={2}>
-                  {c.title}
+                  {c.title[locale]}
                 </Text>
                 <Text variant="caption" muted style={styles.casePlace}>
-                  {c.place}
+                  {c.place[locale]}
                 </Text>
               </View>
-              <VerdictBadge verdict={c.verdict} label={c.tag} size="sm" />
+              <VerdictBadge verdict={c.verdict} label={c.tag[locale]} size="sm" />
             </Card>
           </PressableScale>
         ))}
       </View>
 
-      {/* 나라별 규정 */}
       <Text variant="headline" style={styles.sectionTitle}>
-        나라별 규정 한눈에
+        {t('explore.countriesTitle')}
       </Text>
       <Card padding={0}>
-        {COUNTRIES.map((c, i) => (
-          <View key={c.name}>
+        {RULE_COUNTRIES.map((c, i) => (
+          <View key={c.name.en}>
             {i > 0 && <Divider inset={space[5] + 30 + space[3]} />}
             <PressableScale haptic="light" pressScale={0.98}>
               <View style={styles.countryRow}>
                 <Text style={styles.countryFlag}>{c.flag}</Text>
                 <View style={styles.flex}>
-                  <Text variant="body">{c.name}</Text>
+                  <Text variant="body">{c.name[locale]}</Text>
                   <Text variant="caption" muted>
-                    {c.rule}
+                    {c.rule[locale]}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -122,13 +154,7 @@ const styles = StyleSheet.create({
   caseCard: { flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[4] },
   caseEmoji: { fontSize: 26 },
   casePlace: { marginTop: 2 },
-  countryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[3],
-    paddingVertical: space[3],
-    paddingHorizontal: space[5],
-  },
+  countryRow: { flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[3], paddingHorizontal: space[5] },
   countryFlag: { fontSize: 30 },
   flex: { flex: 1 },
 });

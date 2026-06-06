@@ -13,20 +13,25 @@ import Animated, {
 import { Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
 import { judgeLuggage } from '@/lib/ai';
+import { countryName } from '@/lib/countries';
+import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
-const STEPS = ['물품을 인식하고 있어요', '규정을 확인하고 있어요', '판정하는 중이에요'];
 const PREVIEW = 240;
 const MIN_VISIBLE_MS = 1900;
 
 export default function AnalyzingScreen() {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
   const { uri } = useLocalSearchParams<{ uri?: string }>();
   const destination = useTripStore((s) => s.destination);
   const setCurrentScan = useTripStore((s) => s.setCurrentScan);
   const pendingImage = useTripStore((s) => s.pendingImage);
   const setPendingImage = useTripStore((s) => s.setPendingImage);
   const [step, setStep] = useState(0);
+
+  const steps = [t('analyzing.step1'), t('analyzing.step2'), t('analyzing.step3')];
 
   const scanY = useSharedValue(0);
   useEffect(() => {
@@ -46,6 +51,7 @@ export default function AnalyzingScreen() {
         mimeType: pendingImage?.mimeType,
         destination,
         scannedAt: new Date().toISOString(),
+        locale,
       });
       const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - start));
       setTimeout(() => {
@@ -61,7 +67,6 @@ export default function AnalyzingScreen() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-    // 마운트 시 1회만 실행
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -78,10 +83,10 @@ export default function AnalyzingScreen() {
         </View>
         <View style={styles.texts}>
           <Text variant="title3" center>
-            {STEPS[step]}
+            {steps[step]}
           </Text>
           <Text variant="callout" muted center>
-            {destination.flag} {destination.name} 규정 적용 중
+            {destination.flag} {t('analyzing.applying', { country: countryName(destination, locale) })}
           </Text>
         </View>
       </View>

@@ -9,11 +9,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, PressableScale, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
+import { countryName } from '@/lib/countries';
+import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
 export default function CameraScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useT();
+  const locale = useLocale();
   const destination = useTripStore((s) => s.destination);
   const setPendingImage = useTripStore((s) => s.setPendingImage);
   const [permission, requestPermission] = useCameraPermissions();
@@ -29,11 +33,7 @@ export default function CameraScreen() {
     setBusy(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const photo = await cameraRef.current?.takePictureAsync({
-        quality: 0.4,
-        base64: true,
-        skipProcessing: true,
-      });
+      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.4, base64: true, skipProcessing: true });
       if (photo?.base64) setPendingImage({ base64: photo.base64, mimeType: 'image/jpeg' });
       goAnalyze(photo?.uri);
     } catch {
@@ -45,9 +45,7 @@ export default function CameraScreen() {
     const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.4, base64: true });
     if (!res.canceled) {
       const asset = res.assets[0];
-      if (asset?.base64) {
-        setPendingImage({ base64: asset.base64, mimeType: asset.mimeType ?? 'image/jpeg' });
-      }
+      if (asset?.base64) setPendingImage({ base64: asset.base64, mimeType: asset.mimeType ?? 'image/jpeg' });
       goAnalyze(asset?.uri);
     }
   };
@@ -59,7 +57,12 @@ export default function CameraScreen() {
   if (!permission.granted) {
     return (
       <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + space[2] }]}>
-        <PressableScale haptic="light" onPress={() => router.back()} style={styles.permClose} hitSlop={12}>
+        <PressableScale
+          haptic="light"
+          onPress={() => router.back()}
+          style={styles.permClose}
+          hitSlop={12}
+          accessibilityLabel={t('common.close')}>
           <Ionicons name="close" size={26} color={colors.text} />
         </PressableScale>
         <View style={styles.permBody}>
@@ -67,15 +70,15 @@ export default function CameraScreen() {
             <Ionicons name="camera-outline" size={40} color={colors.primary} />
           </View>
           <Text variant="title3" center>
-            카메라 권한이 필요해요
+            {t('scan.permTitle')}
           </Text>
           <Text variant="callout" muted center>
-            짐을 촬영해 규정을 판정하려면 카메라 접근을 허용해주세요.
+            {t('scan.permDesc')}
           </Text>
-          <Button label="카메라 허용" onPress={requestPermission} style={styles.permBtn} />
+          <Button label={t('scan.allowCamera')} onPress={requestPermission} style={styles.permBtn} />
           <PressableScale haptic="light" onPress={pickFromLibrary}>
             <Text variant="subhead" color="primary">
-              앨범에서 선택하기
+              {t('scan.chooseAlbum')}
             </Text>
           </PressableScale>
         </View>
@@ -88,13 +91,18 @@ export default function CameraScreen() {
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
       <View style={[styles.top, { paddingTop: insets.top + space[2] }]}>
-        <PressableScale haptic="light" onPress={() => router.back()} accessibilityLabel="닫기" style={styles.iconBtn} hitSlop={10}>
+        <PressableScale
+          haptic="light"
+          onPress={() => router.back()}
+          style={styles.iconBtn}
+          hitSlop={10}
+          accessibilityLabel={t('common.close')}>
           <Ionicons name="close" size={22} color="#fff" />
         </PressableScale>
         <View style={styles.destChip}>
           <Text style={styles.destFlag}>{destination.flag}</Text>
           <Text variant="subhead" color="#fff">
-            {destination.name}
+            {countryName(destination, locale)}
           </Text>
         </View>
         <View style={styles.iconBtn} />
@@ -108,18 +116,18 @@ export default function CameraScreen() {
           <View style={[styles.corner, styles.br]} />
         </View>
         <Text variant="callout" color="#fff" center style={styles.guideText}>
-          짐을 펼쳐놓고 한 번에 담아주세요
+          {t('scan.guide')}
         </Text>
       </View>
 
       <View style={[styles.bottom, { paddingBottom: insets.bottom + space[5] }]}>
-        <PressableScale haptic="light" onPress={pickFromLibrary} style={styles.sideBtn}>
+        <PressableScale haptic="light" onPress={pickFromLibrary} style={styles.sideBtn} accessibilityLabel={t('scan.album')}>
           <Ionicons name="images" size={26} color="#fff" />
           <Text variant="footnote" color="#fff">
-            앨범
+            {t('scan.album')}
           </Text>
         </PressableScale>
-        <PressableScale haptic={null} onPress={capture} pressScale={0.92} accessibilityLabel="촬영" style={styles.shutterOuter}>
+        <PressableScale haptic={null} onPress={capture} pressScale={0.92} accessibilityLabel={t('home.startScan')} style={styles.shutterOuter}>
           <View style={styles.shutterInner} />
         </PressableScale>
         <View style={styles.sideBtn} />

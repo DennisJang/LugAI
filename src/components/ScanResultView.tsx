@@ -11,18 +11,22 @@ import Animated, {
 
 import { Card, PressableScale, Text, VerdictBadge } from '@/components/ui';
 import { radius, space, spring, useTheme, type VerdictKey } from '@/design';
+import { countryName } from '@/lib/countries';
+import { useLocale, useT } from '@/lib/i18n';
 import { groupByVerdict, type ScanItem, type ScanResult } from '@/lib/mockScan';
 
-const SECTIONS: { key: VerdictKey; title: string }[] = [
-  { key: 'danger', title: '꼭 확인하세요' },
-  { key: 'warning', title: '조건부 허용' },
-  { key: 'info', title: '신고 · 확인 권장' },
-  { key: 'success', title: '기내 반입 OK' },
+const SECTIONS: { key: VerdictKey; titleKey: string }[] = [
+  { key: 'danger', titleKey: 'result.secDanger' },
+  { key: 'warning', titleKey: 'result.secWarning' },
+  { key: 'info', titleKey: 'result.secInfo' },
+  { key: 'success', titleKey: 'result.secSuccess' },
 ];
 
 /** 분석 결과 본문 — 요약 + 그룹 판정 + 펼침 항목 + 면책. (결과 화면·여행 상세 공용) */
 export function ScanResultView({ scan }: { scan: ScanResult }) {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
   const groups = groupByVerdict(scan.items);
   const counts = {
     success: groups.success.length,
@@ -36,18 +40,20 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
         <View style={styles.summaryHead}>
           <Text style={styles.flag}>{scan.destination.flag}</Text>
           <View style={styles.flex}>
-            <Text variant="title3">{scan.destination.name}행 짐 분석</Text>
+            <Text variant="title3">
+              {t('result.summaryTitle', { country: countryName(scan.destination, locale) })}
+            </Text>
             <Text variant="caption" muted>
-              총 {scan.items.length}개 물품
+              {t('result.totalItems', { n: scan.items.length })}
             </Text>
           </View>
         </View>
         <View style={[styles.counts, { borderTopColor: colors.borderSubtle }]}>
-          <CountStat n={counts.success} label="기내 OK" color={colors.verdict.success.fg} />
+          <CountStat n={counts.success} label={t('result.cabinOk')} color={colors.verdict.success.fg} />
           <View style={[styles.vline, { backgroundColor: colors.borderSubtle }]} />
-          <CountStat n={counts.warning} label="조건부" color={colors.verdict.warning.fg} />
+          <CountStat n={counts.warning} label={t('result.conditional')} color={colors.verdict.warning.fg} />
           <View style={[styles.vline, { backgroundColor: colors.borderSubtle }]} />
-          <CountStat n={counts.danger} label="확인 필요" color={colors.verdict.danger.fg} />
+          <CountStat n={counts.danger} label={t('result.checkNeeded')} color={colors.verdict.danger.fg} />
         </View>
       </Card>
 
@@ -59,7 +65,7 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
             <View style={styles.sectionHead}>
               <View style={[styles.dot, { backgroundColor: colors.verdict[sec.key].solid }]} />
               <Text variant="headline" style={styles.flex}>
-                {sec.title}
+                {t(sec.titleKey)}
               </Text>
               <Text variant="subhead" color="textTertiary">
                 {items.length}
@@ -67,7 +73,7 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
             </View>
             <View style={styles.items}>
               {items.map((it) => (
-                <ScanItemCard key={it.id} item={it} />
+                <ScanItemCard key={it.id} item={it} sourceLabel={t('common.source')} />
               ))}
             </View>
           </View>
@@ -77,7 +83,7 @@ export function ScanResultView({ scan }: { scan: ScanResult }) {
       <View style={[styles.disclaimer, { backgroundColor: colors.backgroundAlt }]}>
         <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
         <Text variant="footnote" color="textTertiary" style={styles.flex}>
-          AI 판정은 참고용이에요. 최종 반입 여부는 항공사·도착지 규정을 꼭 확인하세요.
+          {t('result.disclaimer')}
         </Text>
       </View>
     </View>
@@ -97,7 +103,7 @@ function CountStat({ n, label, color }: { n: number; label: string; color: strin
   );
 }
 
-function ScanItemCard({ item }: { item: ScanItem }) {
+function ScanItemCard({ item, sourceLabel }: { item: ScanItem; sourceLabel: string }) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const rot = useSharedValue(0);
@@ -143,7 +149,7 @@ function ScanItemCard({ item }: { item: ScanItem }) {
               </View>
             ) : null}
             <Text variant="footnote" color="textTertiary">
-              출처 · {item.source}
+              {sourceLabel} · {item.source}
             </Text>
           </Animated.View>
         )}
@@ -165,12 +171,7 @@ const styles = StyleSheet.create({
   items: { gap: space[2] },
   itemHeader: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   itemEmoji: { fontSize: 26 },
-  detail: {
-    marginTop: space[3],
-    paddingTop: space[3],
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: space[2],
-  },
+  detail: { marginTop: space[3], paddingTop: space[3], borderTopWidth: StyleSheet.hairlineWidth, gap: space[2] },
   caseBox: { padding: space[3], borderRadius: radius.md },
   disclaimer: { flexDirection: 'row', gap: space[2], padding: space[3], borderRadius: radius.md, marginTop: space[2] },
   flex: { flex: 1 },

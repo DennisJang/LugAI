@@ -4,75 +4,76 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, Divider, Row, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
+import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
 const ROW_INSET = space[5] + 34 + space[3];
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
+  const setLocale = useTripStore((s) => s.setLocale);
   const trips = useTripStore((s) => s.trips);
-  const itemCount = trips.reduce((n, t) => n + t.items.length, 0);
-  const countryCount = new Set(trips.map((t) => t.destination.code)).size;
+  const itemCount = trips.reduce((n, trip) => n + trip.items.length, 0);
+  const countryCount = new Set(trips.map((trip) => trip.destination.code)).size;
 
   return (
     <Screen scroll>
       <View style={styles.header}>
-        <Text variant="title1">프로필</Text>
+        <Text variant="title1">{t('profile.title')}</Text>
       </View>
 
-      {/* 계정 (게스트) */}
       <Card style={styles.account}>
         <View style={[styles.avatar, { backgroundColor: colors.backgroundAlt }]}>
           <Ionicons name="person" size={28} color={colors.textTertiary} />
         </View>
         <View style={styles.flex}>
-          <Text variant="title3">게스트</Text>
+          <Text variant="title3">{t('profile.guest')}</Text>
           <Text variant="caption" muted>
-            로그인 없이 사용 중 · 계정 동기화 곧 제공
+            {t('profile.guestDesc')}
           </Text>
         </View>
       </Card>
 
-      {/* 통계 */}
       <View style={styles.stats}>
         <Card style={styles.statTile}>
           <Text variant="title1">{itemCount}</Text>
           <Text variant="caption" muted>
-            스캔한 물품
+            {t('profile.statItems')}
           </Text>
         </Card>
         <Card style={styles.statTile}>
           <Text variant="title1">{countryCount}</Text>
           <Text variant="caption" muted>
-            다녀온 나라
+            {t('profile.statCountries')}
           </Text>
         </Card>
       </View>
 
-      {/* 설정 */}
       <Text variant="footnote" color="textTertiary" style={styles.groupTitle}>
-        설정
+        {t('profile.settings')}
       </Text>
       <Card padding={0}>
-        <Row icon="options-outline" label="단위" value="ml · cm" showChevron={false} />
+        <Row icon="options-outline" label={t('profile.units')} value="ml · cm" showChevron={false} />
         <Divider inset={ROW_INSET} />
-        <Row icon="language-outline" label="언어" value="한국어" showChevron={false} />
+        <Row
+          icon="language-outline"
+          label={t('profile.language')}
+          value={t('profile.langName')}
+          onPress={() => setLocale(locale === 'ko' ? 'en' : 'ko')}
+        />
       </Card>
 
-      {/* 정보 */}
       <Text variant="footnote" color="textTertiary" style={styles.groupTitle}>
-        정보
+        {t('profile.about')}
       </Text>
       <Card padding={0}>
-        <Row
-          icon="shield-checkmark-outline"
-          label="개인정보처리방침"
-          onPress={() => router.push('/legal/privacy')}
-        />
+        <Row icon="shield-checkmark-outline" label={t('profile.privacy')} onPress={() => router.push('/legal/privacy')} />
         <Divider inset={ROW_INSET} />
-        <Row icon="document-text-outline" label="이용약관" onPress={() => router.push('/legal/terms')} />
+        <Row icon="document-text-outline" label={t('profile.terms')} onPress={() => router.push('/legal/terms')} />
         <Divider inset={ROW_INSET} />
-        <Row icon="information-circle-outline" label="버전" value="1.0.0" showChevron={false} />
+        <Row icon="information-circle-outline" label={t('profile.version')} value="1.0.0" showChevron={false} />
       </Card>
     </Screen>
   );

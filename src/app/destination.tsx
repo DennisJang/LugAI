@@ -5,20 +5,26 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Card, Chip, Divider, PressableScale, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
-import { COUNTRIES, findCountry, POPULAR_CODES, type Country } from '@/lib/countries';
+import { COUNTRIES, countryName, findCountry, POPULAR_CODES, type Country } from '@/lib/countries';
+import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
 
 export default function DestinationScreen() {
   const { colors } = useTheme();
+  const t = useT();
+  const locale = useLocale();
   const destination = useTripStore((s) => s.destination);
   const setDestination = useTripStore((s) => s.setDestination);
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    const q = query.trim();
+    const q = query.trim().toLowerCase();
     if (!q) return COUNTRIES;
     return COUNTRIES.filter(
-      (c) => c.name.includes(q) || c.code.toLowerCase().includes(q.toLowerCase()),
+      (c) =>
+        c.name.includes(query.trim()) ||
+        c.nameEn.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q),
     );
   }, [query]);
 
@@ -32,12 +38,12 @@ export default function DestinationScreen() {
   return (
     <Screen edges={['top']} padded={false}>
       <View style={styles.header}>
-        <Text variant="title2">어디로 가세요?</Text>
+        <Text variant="title2">{t('dest.title')}</Text>
         <PressableScale
           haptic="light"
           onPress={() => router.back()}
           hitSlop={12}
-          accessibilityLabel="닫기"
+          accessibilityLabel={t('common.close')}
           style={[styles.closeBtn, { backgroundColor: colors.backgroundAlt }]}>
           <Ionicons name="close" size={20} color={colors.textSecondary} />
         </PressableScale>
@@ -49,7 +55,7 @@ export default function DestinationScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="나라 검색"
+            placeholder={t('dest.search')}
             placeholderTextColor={colors.textTertiary}
             style={[styles.searchInput, { color: colors.text }]}
             autoCorrect={false}
@@ -64,13 +70,13 @@ export default function DestinationScreen() {
         {!query && (
           <>
             <Text variant="footnote" color="textTertiary" style={styles.sectionLabel}>
-              인기 여행지
+              {t('dest.popular')}
             </Text>
             <View style={styles.popular}>
               {popular.map((c) => (
                 <Chip
                   key={c.code}
-                  label={`${c.flag} ${c.name}`}
+                  label={`${c.flag} ${countryName(c, locale)}`}
                   active={c.code === destination.code}
                   onPress={() => select(c)}
                 />
@@ -80,7 +86,7 @@ export default function DestinationScreen() {
         )}
 
         <Text variant="footnote" color="textTertiary" style={styles.sectionLabel}>
-          {query ? '검색 결과' : '전체'}
+          {query ? t('dest.results') : t('dest.all')}
         </Text>
         <Card padding={0}>
           {filtered.map((c, i) => (
@@ -90,7 +96,7 @@ export default function DestinationScreen() {
                 <View style={styles.countryRow}>
                   <Text style={styles.flag}>{c.flag}</Text>
                   <Text variant="body" style={styles.flex}>
-                    {c.name}
+                    {countryName(c, locale)}
                   </Text>
                   {c.code === destination.code && (
                     <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
@@ -100,9 +106,9 @@ export default function DestinationScreen() {
             </View>
           ))}
           {filtered.length === 0 && (
-            <View style={styles.empty}>
+            <View style={styles.emptyRow}>
               <Text variant="callout" color="textTertiary">
-                검색 결과가 없어요
+                {t('dest.noResults')}
               </Text>
             </View>
           )}
@@ -143,6 +149,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[5],
   },
   flag: { fontSize: 30 },
-  empty: { padding: space[6], alignItems: 'center' },
+  emptyRow: { padding: space[6], alignItems: 'center' },
   flex: { flex: 1 },
 });

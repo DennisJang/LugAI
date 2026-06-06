@@ -1,24 +1,27 @@
+import { getLocales } from 'expo-localization';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text } from '@/components/ui';
 import { space, useTheme } from '@/design';
+import { t } from '@/lib/i18n';
 
-/** expo-router 전역 에러 바운더리 — 렌더 에러 시 친화적 폴백. */
+/** expo-router 전역 에러 바운더리 — 렌더 에러 시 친화적 폴백. (store 비의존, 순수 t 사용) */
 export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
   const { colors } = useTheme();
+  const locale = getLocales()[0]?.languageCode === 'ko' ? 'ko' : 'en';
   return (
     <Screen>
       <View style={styles.body}>
         <Text style={styles.emoji}>🧳</Text>
         <Text variant="title3" center>
-          문제가 발생했어요
+          {t(locale, 'error.title')}
         </Text>
         <Text variant="callout" muted center>
-          잠시 후 다시 시도해주세요.{'\n'}문제가 계속되면 앱을 다시 실행해 주세요.
+          {t(locale, 'error.desc')}
         </Text>
         <View style={styles.cta}>
-          <Button label="다시 시도" size="md" fullWidth={false} onPress={() => retry()} />
+          <Button label={t(locale, 'common.retry')} size="md" fullWidth={false} onPress={() => retry()} />
         </View>
         {__DEV__ ? (
           <Text variant="footnote" color="textTertiary" style={[styles.dev, { color: colors.textTertiary }]}>

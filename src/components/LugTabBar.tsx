@@ -7,23 +7,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale, Text } from '@/components/ui';
 import { radius, shadow, space, useTheme } from '@/design';
+import { useT } from '@/lib/i18n';
 
 type TabMeta = {
-  label: string;
+  labelKey: string;
   active: keyof typeof Ionicons.glyphMap;
   inactive: keyof typeof Ionicons.glyphMap;
 };
 
 const TABS: Record<string, TabMeta> = {
-  index: { label: '홈', active: 'home', inactive: 'home-outline' },
-  discover: { label: '둘러보기', active: 'compass', inactive: 'compass-outline' },
-  trips: { label: '내 여행', active: 'briefcase', inactive: 'briefcase-outline' },
-  profile: { label: '프로필', active: 'person', inactive: 'person-outline' },
+  index: { labelKey: 'tab.home', active: 'home', inactive: 'home-outline' },
+  discover: { labelKey: 'tab.explore', active: 'compass', inactive: 'compass-outline' },
+  trips: { labelKey: 'tab.trips', active: 'briefcase', inactive: 'briefcase-outline' },
+  profile: { labelKey: 'tab.profile', active: 'person', inactive: 'person-outline' },
 };
 
 export function LugTabBar({ state, navigation }: BottomTabBarProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const t = useT();
   const routes = state.routes;
   const mid = Math.floor(routes.length / 2);
 
@@ -32,6 +34,7 @@ export function LugTabBar({ state, navigation }: BottomTabBarProps) {
     if (!meta) return null;
     const focused = state.index === index;
     const color = focused ? colors.primary : colors.textTertiary;
+    const label = t(meta.labelKey);
     const onPress = () => {
       const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
       if (!focused && !event.defaultPrevented) navigation.navigate(route.name as never);
@@ -42,13 +45,13 @@ export function LugTabBar({ state, navigation }: BottomTabBarProps) {
         haptic="selection"
         pressScale={0.9}
         onPress={onPress}
-        accessibilityLabel={meta.label}
+        accessibilityLabel={label}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         style={styles.tab}>
         <Ionicons name={focused ? meta.active : meta.inactive} size={24} color={color} />
         <Text variant="footnote" color={color}>
-          {meta.label}
+          {label}
         </Text>
       </PressableScale>
     );
@@ -71,7 +74,7 @@ export function LugTabBar({ state, navigation }: BottomTabBarProps) {
           haptic="medium"
           pressScale={0.92}
           onPress={() => router.push('/scan')}
-          accessibilityLabel="짐 스캔"
+          accessibilityLabel={t('tab.scan')}
           style={[styles.fab, { backgroundColor: colors.primary }, shadow.lg]}>
           <Ionicons name="scan" size={26} color={colors.onPrimary} />
         </PressableScale>

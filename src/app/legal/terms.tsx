@@ -1,6 +1,8 @@
 import { LegalDoc } from '@/components/LegalDoc';
-import { TERMS } from '@/lib/legal';
+import { useLocale } from '@/lib/i18n';
+import { getTerms } from '@/lib/legal';
 
 export default function TermsScreen() {
-  return <LegalDoc doc={TERMS} />;
+  const locale = useLocale();
+  return <LegalDoc doc={getTerms(locale)} />;
 }

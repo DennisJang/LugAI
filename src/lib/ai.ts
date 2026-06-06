@@ -1,4 +1,5 @@
 import type { Country } from './countries';
+import type { Locale } from './i18n';
 import { mockScanFor, type ScanItem, type ScanResult } from './mockScan';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -11,6 +12,7 @@ export interface JudgeParams {
   mimeType?: string;
   destination: Country;
   scannedAt: string;
+  locale: Locale;
 }
 
 /**
@@ -18,10 +20,10 @@ export interface JudgeParams {
  * 키 미설정/이미지 없음/네트워크·서버 오류 시 mock 결과로 graceful 폴백한다.
  */
 export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
-  const { base64, mimeType = 'image/jpeg', destination, scannedAt } = params;
+  const { base64, mimeType = 'image/jpeg', destination, scannedAt, locale } = params;
 
   if (!SUPABASE_URL || !ANON_KEY || !base64) {
-    return mockScanFor(destination, scannedAt);
+    return mockScanFor(destination, scannedAt, locale);
   }
 
   const controller = new AbortController();
@@ -37,7 +39,8 @@ export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
       body: JSON.stringify({
         image: base64,
         mimeType,
-        destination: { code: destination.code, name: destination.name },
+        locale,
+        destination: { code: destination.code, name: locale === 'en' ? destination.nameEn : destination.name },
       }),
       signal: controller.signal,
     });
@@ -47,8 +50,7 @@ export async function judgeLuggage(params: JudgeParams): Promise<ScanResult> {
     if (!items.length) throw new Error('no items');
     return { destination, scannedAt, items };
   } catch {
-    // 어떤 실패든 사용자 경험을 끊지 않고 mock으로 대체
-    return mockScanFor(destination, scannedAt);
+    return mockScanFor(destination, scannedAt, locale);
   } finally {
     clearTimeout(timer);
   }
@@ -65,13 +67,13 @@ function normalizeItems(raw: unknown): ScanItem[] {
     return {
       id: `ai-${i}`,
       emoji,
-      name: String(o.name ?? '물품'),
+      name: String(o.name ?? '—'),
       verdict,
-      badge: String(o.badge ?? '확인 필요'),
+      badge: String(o.badge ?? '—'),
       reason: String(o.reason ?? ''),
       detail: String(o.detail ?? ''),
       caseNote: o.caseNote ? String(o.caseNote) : undefined,
-      source: String(o.source ?? '규정 확인 필요'),
+      source: String(o.source ?? ''),
     };
   });
 }

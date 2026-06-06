@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocales } from 'expo-localization';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { findCountry, type Country } from './countries';
+import type { Locale } from './i18n';
 import type { ScanItem, ScanResult } from './mockScan';
 
 export interface Trip {
@@ -17,7 +19,17 @@ export interface PendingImage {
   mimeType: string;
 }
 
+function deviceLocale(): Locale {
+  try {
+    return getLocales()[0]?.languageCode === 'ko' ? 'ko' : 'en';
+  } catch {
+    return 'ko';
+  }
+}
+
 interface TripState {
+  locale: Locale;
+  setLocale: (l: Locale) => void;
   destination: Country;
   setDestination: (c: Country) => void;
   /** 카메라/앨범에서 받은 이미지(임시, 영속화 안 함) */
@@ -40,6 +52,8 @@ function makeId(): string {
 export const useTripStore = create<TripState>()(
   persist(
     (set, get) => ({
+      locale: deviceLocale(),
+      setLocale: (locale) => set({ locale }),
       destination: findCountry('JP')!,
       setDestination: (destination) => set({ destination }),
       pendingImage: null,
@@ -65,10 +79,21 @@ export const useTripStore = create<TripState>()(
     }),
     {
       name: 'lugai-store',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
-      // 임시 상태(pendingImage/currentScan)·플래그는 저장하지 않음
-      partialize: (s) => ({ destination: s.destination, trips: s.trips }),
+      // 구버전에 저장된 Country(nameEn 없음) → 코드로 재해석해 보강
+      migrate: (persisted) => {
+        const p = persisted as { destination?: Country; trips?: Trip[] } | null;
+        if (p && typeof p === 'object') {
+          const fix = (c?: Country) => (c?.code ? findCountry(c.code) ?? c : c);
+          if (p.destination) p.destination = fix(p.destination) as Country;
+          if (Array.isArray(p.trips)) {
+            p.trips = p.trips.map((tr) => ({ ...tr, destination: fix(tr.destination) as Country }));
+          }
+        }
+        return p as TripState;
+      },
+      partialize: (s) => ({ destination: s.destination, trips: s.trips, locale: s.locale }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

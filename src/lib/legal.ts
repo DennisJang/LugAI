@@ -1,4 +1,5 @@
 import data from './legal-content.json';
+import type { Locale } from './i18n';
 
 export interface LegalSection {
   heading: string;
@@ -15,5 +16,10 @@ export interface LegalDocData {
 export const SUPPORT_EMAIL = 'support@lugai.app';
 
 // 단일 소스: legal-content.json (앱 화면 + docs/legal HTML 생성이 공유)
-export const PRIVACY = data.privacy as LegalDocData;
-export const TERMS = data.terms as LegalDocData;
+export function getPrivacy(locale: Locale): LegalDocData {
+  return (locale === 'en' ? data.en.privacy : data.ko.privacy) as LegalDocData;
+}
+
+export function getTerms(locale: Locale): LegalDocData {
+  return (locale === 'en' ? data.en.terms : data.ko.terms) as LegalDocData;
+}
