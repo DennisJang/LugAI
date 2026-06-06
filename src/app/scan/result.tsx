@@ -18,6 +18,7 @@ import { useTripStore } from '@/lib/store';
 const SECTIONS: { key: VerdictKey; title: string }[] = [
   { key: 'danger', title: '꼭 확인하세요' },
   { key: 'warning', title: '조건부 허용' },
+  { key: 'info', title: '신고 · 확인 권장' },
   { key: 'success', title: '기내 반입 OK' },
 ];
 
