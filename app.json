@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "lugai_init",
-    "slug": "lugai_init",
+    "name": "LugAI",
+    "slug": "lugai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "lugaiinit",
-    "userInterfaceStyle": "automatic",
+    "scheme": "lugai",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
