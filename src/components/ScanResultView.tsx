@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,8 +14,10 @@ import Animated, {
 import { Card, PressableScale, Text, VerdictBadge } from '@/components/ui';
 import { radius, space, spring, useTheme, type VerdictKey } from '@/design';
 import { countryName } from '@/lib/countries';
+import { submitFeedback } from '@/lib/feedback';
 import { useLocale, useT } from '@/lib/i18n';
 import { groupByVerdict, type ScanItem, type ScanResult } from '@/lib/mockScan';
+import { useTripStore } from '@/lib/store';
 
 const SECTIONS: { key: VerdictKey; titleKey: string }[] = [
   { key: 'danger', titleKey: 'result.secDanger' },
@@ -82,7 +85,7 @@ export function ScanResultView({ scan, onRecapture }: { scan: ScanResult; onReca
             </View>
             <View style={styles.items}>
               {items.map((it) => (
-                <ScanItemCard key={it.id} item={it} />
+                <ScanItemCard key={it.id} item={it} scan={scan} />
               ))}
             </View>
           </View>
@@ -157,7 +160,7 @@ function CountStat({ n, label, color }: { n: number; label: string; color: strin
   );
 }
 
-function ScanItemCard({ item }: { item: ScanItem }) {
+function ScanItemCard({ item, scan }: { item: ScanItem; scan: ScanResult }) {
   const { colors } = useTheme();
   const t = useT();
   const [expanded, setExpanded] = useState(false);
@@ -225,10 +228,93 @@ function ScanItemCard({ item }: { item: ScanItem }) {
             <Text variant="footnote" color="textTertiary">
               {t('common.source')} · {item.source}
             </Text>
+            <View style={[styles.feedbackDivider, { borderTopColor: colors.borderSubtle }]} />
+            <FeedbackRow scan={scan} item={item} />
           </Animated.View>
         )}
       </Card>
     </Animated.View>
+  );
+}
+
+const FEEDBACK_OPTS: { verdict: VerdictKey; key: string }[] = [
+  { verdict: 'success', key: 'feedback.passed' },
+  { verdict: 'warning', key: 'feedback.conditional' },
+  { verdict: 'danger', key: 'feedback.blocked' },
+  { verdict: 'info', key: 'feedback.declare' },
+];
+
+/** 항목별 정정/확인 피드백(데이터 플라이휠). 사용자가 누른 행동만 익명 전송, 항목당 1회. */
+function FeedbackRow({ scan, item }: { scan: ScanResult; item: ScanItem }) {
+  const { colors } = useTheme();
+  const t = useT();
+  const anonId = useTripStore((s) => s.anonId);
+  const markFeedback = useTripStore((s) => s.markFeedback);
+  const itemKey = item.category ?? item.name;
+  const fbKey = `${scan.destination.code}|${itemKey}`;
+  const alreadyDone = useTripStore((s) => s.feedbackKeys.includes(fbKey));
+  const [phase, setPhase] = useState<'idle' | 'picking' | 'done'>(alreadyDone ? 'done' : 'idle');
+
+  const send = (userVerdict: VerdictKey) => {
+    setPhase('done');
+    markFeedback(fbKey);
+    Haptics.selectionAsync();
+    void submitFeedback({
+      anonId,
+      destCode: scan.destination.code,
+      itemKey,
+      aiVerdict: item.verdict,
+      userVerdict,
+    });
+  };
+
+  if (phase === 'done') {
+    return (
+      <Text variant="footnote" color="textTertiary">
+        {t('feedback.thanks')}
+      </Text>
+    );
+  }
+
+  if (phase === 'picking') {
+    return (
+      <Animated.View entering={FadeIn.duration(140)} style={styles.feedbackPick}>
+        <Text variant="footnote" color="textTertiary">
+          {t('feedback.actual')}
+        </Text>
+        <View style={styles.feedbackChips}>
+          {FEEDBACK_OPTS.filter((o) => o.verdict !== item.verdict).map((o) => (
+            <PressableScale
+              key={o.verdict}
+              haptic="light"
+              onPress={() => send(o.verdict)}
+              style={[styles.feedbackChip, { backgroundColor: colors.backgroundAlt }]}>
+              <Text variant="footnote" color="textSecondary">
+                {t(o.key)}
+              </Text>
+            </PressableScale>
+          ))}
+        </View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <View style={styles.feedbackRow}>
+      <Text variant="footnote" color="textTertiary" style={styles.flex}>
+        {t('feedback.prompt')}
+      </Text>
+      <PressableScale haptic="light" onPress={() => send(item.verdict)} hitSlop={8} style={styles.feedbackBtn}>
+        <Text variant="footnote" color="primary">
+          {t('feedback.yes')}
+        </Text>
+      </PressableScale>
+      <PressableScale haptic="light" onPress={() => setPhase('picking')} hitSlop={8} style={styles.feedbackBtn}>
+        <Text variant="footnote" color="textSecondary">
+          {t('feedback.no')}
+        </Text>
+      </PressableScale>
+    </View>
   );
 }
 
@@ -260,6 +346,12 @@ const styles = StyleSheet.create({
   itemEmoji: { fontSize: 26 },
   detail: { marginTop: space[3], paddingTop: space[3], borderTopWidth: StyleSheet.hairlineWidth, gap: space[2] },
   caseBox: { padding: space[3], borderRadius: radius.md },
+  feedbackDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: space[1] },
+  feedbackRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  feedbackBtn: { paddingVertical: 2 },
+  feedbackPick: { gap: space[2] },
+  feedbackChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  feedbackChip: { paddingVertical: 4, paddingHorizontal: space[3], borderRadius: radius.full },
   disclaimer: { flexDirection: 'row', gap: space[2], padding: space[3], borderRadius: radius.md, marginTop: space[2] },
   rulesLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[1], paddingVertical: space[4] },
   flex: { flex: 1 },

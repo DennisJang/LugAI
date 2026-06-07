@@ -2,10 +2,10 @@
   "ko": {
     "privacy": {
       "title": "개인정보처리방침",
-      "updated": "2026년 6월 6일",
+      "updated": "2026년 6월 7일",
       "intro": "LugAI(이하 \"앱\")는 이용자의 개인정보를 중요하게 생각하며, 서비스 제공에 필요한 최소한의 정보만 처리합니다. 본 방침은 앱이 어떤 정보를 어떻게 처리하는지 설명합니다.",
       "sections": [
-        { "heading": "1. 수집·처리하는 정보", "body": "• 사진: 짐 분석을 위해 촬영하거나 앨범에서 선택한 사진을 처리합니다. 사진은 분석을 위해 일시적으로 AI 처리 서버로 전송되며, 분석 후 서버에 저장하지 않습니다.\n• 여행/판정 기록: 이용자가 저장한 여행과 물품 판정 결과는 이용자 기기 내부(로컬 저장소)에만 저장됩니다.\n• 앱은 계정·이름·이메일·정확한 위치 등 개인 식별 정보를 수집하지 않습니다." },
+        { "heading": "1. 수집·처리하는 정보", "body": "• 사진: 짐 분석을 위해 촬영하거나 앨범에서 선택한 사진을 처리합니다. 사진은 분석을 위해 일시적으로 AI 처리 서버로 전송되며, 분석 후 서버에 저장하지 않습니다.\n• 여행/판정 기록: 이용자가 저장한 여행과 물품 판정 결과는 이용자 기기 내부(로컬 저장소)에만 저장됩니다.\n• 익명 피드백(선택): 결과 화면에서 이용자가 직접 '정확/정정'을 누른 경우에만, 판정 품질 개선을 위해 익명 식별자·도착지·물품명·판정값을 전송합니다. 사진·개인정보는 포함되지 않으며, 누르지 않으면 전송되지 않습니다.\n• 앱은 계정·이름·이메일·정확한 위치 등 개인 식별 정보를 수집하지 않습니다." },
         { "heading": "2. 이용 목적", "body": "수집된 사진은 오직 짐 물품 식별 및 나라별 반입 규정 판정 결과를 제공하기 위해서만 이용됩니다." },
         { "heading": "3. 제3자 처리", "body": "사진 분석은 Anthropic의 Claude AI를 통해 처리됩니다. 사진은 분석 목적에 한해 전송되며, 광고·마케팅 목적으로 제3자에게 제공·판매하지 않습니다." },
         { "heading": "4. 보관 및 파기", "body": "여행 기록은 이용자 기기에 저장되며 앱 삭제 시 함께 삭제됩니다. 분석용으로 전송된 사진은 처리 직후 폐기되며 별도로 보관하지 않습니다." },
@@ -36,10 +36,10 @@
   "en": {
     "privacy": {
       "title": "Privacy Policy",
-      "updated": "June 6, 2026",
+      "updated": "June 7, 2026",
       "intro": "LugAI (\"the App\") values your privacy and processes only the minimum information needed to provide the service. This policy explains what information the App processes and how.",
       "sections": [
-        { "heading": "1. Information we process", "body": "• Photos: Photos you take or pick to analyze your luggage are processed. They are sent temporarily to an AI server for analysis and are not stored on the server afterward.\n• Trips/verdicts: Trips and item verdicts you save are stored only on your device (local storage).\n• The App does not collect identifying information such as accounts, names, emails, or precise location." },
+        { "heading": "1. Information we process", "body": "• Photos: Photos you take or pick to analyze your luggage are processed. They are sent temporarily to an AI server for analysis and are not stored on the server afterward.\n• Trips/verdicts: Trips and item verdicts you save are stored only on your device (local storage).\n• Anonymous feedback (optional): Only when you tap 'correct/incorrect' on a verdict, an anonymous identifier, destination, item name, and verdict value are sent to improve verdict quality. No photos or personal data are included, and nothing is sent unless you tap.\n• The App does not collect identifying information such as accounts, names, emails, or precise location." },
         { "heading": "2. Purpose", "body": "Photos are used solely to identify items and provide per-country baggage rule verdicts." },
         { "heading": "3. Third-party processing", "body": "Photo analysis is performed via Anthropic's Claude AI. Photos are sent only for analysis and are never sold or shared for advertising or marketing." },
         { "heading": "4. Retention & deletion", "body": "Trip records are stored on your device and are removed when you delete the App. Photos sent for analysis are discarded immediately after processing and are not retained." },

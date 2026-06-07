@@ -63,8 +63,8 @@ npx supabase db push          # supabase/migrations/0001_rate_limits.sql 적용
 
 ### 1) 코퍼스 스키마 + 시드 적용
 ```bash
-npx supabase db push          # supabase/migrations/0002_regulations_corpus.sql 적용
-# 또는 대시보드 → SQL Editor 에 0002_regulations_corpus.sql 내용 붙여넣기
+npx supabase db push          # 0002_regulations_corpus.sql + 0003_feedback_columns.sql 적용
+# 또는 대시보드 → SQL Editor 에 0002·0003 내용 붙여넣기
 ```
 - `vector`(pgvector) 확장 활성 + `reg_rules`/`country_rules`/`item_aliases`/`scans`/`feedback` 테이블 생성.
 - `regulations.ts`의 baseline·국가별 규정이 **텍스트로 시드**됩니다(임베딩은 NULL → 2단계에서 백필).
@@ -93,9 +93,17 @@ npx supabase functions deploy judge-luggage --no-verify-jwt
 - 규정 수정 테스트: `country_rules` 한 행을 수정 → 앱 재배포 없이 판정 grounding에 반영되는지.
 - 벡터 검색 RPC `match_regulations(query_embedding, match_count)` 사용 가능(향후 per-item 시맨틱 검색용).
 
+### 4) (P4) 피드백 수집 활성화
+```bash
+npx supabase functions deploy submit-feedback --no-verify-jwt
+```
+- 결과 화면에서 이용자가 "정확/정정"을 누르면 `feedback` 테이블에 익명 1행 적재(사진·PII 없음).
+- 확인: `select dest_code, item_key, ai_verdict, user_verdict from feedback order by created_at desc limit 10;`
+- 미배포 시 앱은 조용히 무시(피드백만 안 쌓임, UX 영향 없음).
+
 ---
 
 ## (선택) 향후
 - 익명 로그인 + verify_jwt로 인증 강화.
-- **P4 플라이휠**: 결과 화면 "정정/실제 통과" 피드백 → `feedback` 테이블 → 오판 패턴.
+- **플라이휠 분석**: `feedback`의 `ai_verdict` vs `user_verdict` 비교로 오판 패턴 → 규정 chunk 보강·few-shot·`item_aliases` 확장.
 - **2-stage 검색**: vision 식별 → per-item `match_regulations` top-k → 재판정(정밀도↑, +1 호출).

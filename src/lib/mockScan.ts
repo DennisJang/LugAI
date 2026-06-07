@@ -20,6 +20,8 @@ export interface ScanItem {
   confidence?: Confidence;
   /** 라벨에서 실제로 읽은 수치(단위 포함). 예: '20,000mAh', '120ml' */
   measurement?: string;
+  /** 언어 독립 카테고리 키(피드백/플라이휠 클러스터링용). 예: 'liquids','powerbank' */
+  category?: string;
 }
 
 export interface ScanResult {
@@ -34,6 +36,7 @@ type L = { ko: string; en: string };
 interface BaseItem {
   emoji: string;
   verdict: VerdictKey;
+  category: string;
   name: L;
   badge: L;
   reason: L;
@@ -50,6 +53,7 @@ const BASE: BaseItem[] = [
     verdict: 'warning',
     confidence: 'low',
     measurement: '20,000mAh',
+    category: 'powerbank',
     name: { ko: '보조배터리 20,000mAh', en: '20,000mAh power bank' },
     badge: { ko: '기내만', en: 'Cabin only' },
     reason: {
@@ -68,6 +72,7 @@ const BASE: BaseItem[] = [
     verdict: 'danger',
     confidence: 'medium',
     measurement: '120ml',
+    category: 'liquids',
     name: { ko: '토너 120ml', en: '120ml toner' },
     badge: { ko: '100ml 초과', en: 'Over 100ml' },
     reason: { ko: '기내 액체는 용기당 100ml 이하만 허용', en: 'Cabin liquids must be 100ml or less per container' },
@@ -84,6 +89,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '🔪',
     verdict: 'warning',
+    category: 'blade',
     name: { ko: '맥가이버칼', en: 'Swiss army knife' },
     badge: { ko: '위탁만', en: 'Checked only' },
     reason: { ko: '날붙이는 기내 반입 불가 — 위탁 수하물로만', en: 'Blades are banned from the cabin — checked baggage only' },
@@ -96,6 +102,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '💨',
     verdict: 'warning',
+    category: 'vape',
     name: { ko: '전자담배', en: 'E-cigarette' },
     badge: { ko: '기내만', en: 'Cabin only' },
     reason: {
@@ -112,6 +119,7 @@ const BASE: BaseItem[] = [
     emoji: '☀️',
     verdict: 'success',
     measurement: '50ml',
+    category: 'liquids',
     name: { ko: '선크림 50ml', en: '50ml sunscreen' },
     badge: { ko: '기내 OK', en: 'Carry-on OK' },
     reason: { ko: '100ml 이하 액체 — 기내 반입 가능', en: 'Liquid 100ml or less — allowed in the cabin' },
@@ -121,6 +129,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '✂️',
     verdict: 'success',
+    category: 'general',
     name: { ko: '손톱깎이', en: 'Nail clippers' },
     badge: { ko: '기내 OK', en: 'Carry-on OK' },
     reason: { ko: '소형 손톱깎이는 기내 허용', en: 'Small nail clippers are allowed in the cabin' },
@@ -133,6 +142,7 @@ const BASE: BaseItem[] = [
   {
     emoji: '🥬',
     verdict: 'warning',
+    category: 'food',
     name: { ko: '포장 김치', en: 'Packaged kimchi' },
     badge: { ko: '검역 확인', en: 'Check quarantine' },
     reason: {
@@ -153,6 +163,7 @@ const BASE: BaseItem[] = [
     emoji: '🔥',
     verdict: 'danger',
     confidence: 'low',
+    category: 'lighter',
     name: { ko: '라이터', en: 'Lighter' },
     badge: { ko: '기내 1개만', en: '1 in cabin' },
     reason: {
@@ -181,6 +192,7 @@ export function mockScanFor(destination: Country, scannedAt: string, locale: Loc
     source: pick(b.source, locale),
     confidence: b.confidence ?? 'high',
     measurement: b.measurement,
+    category: b.category,
   }));
 
   // 검역 엄격국: 김치 → 금지

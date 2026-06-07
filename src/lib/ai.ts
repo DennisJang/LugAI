@@ -8,6 +8,17 @@ const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const TIMEOUT_MS = 30000;
 const VALID_VERDICTS = ['success', 'warning', 'danger', 'info'];
 const VALID_CONFIDENCE = ['low', 'medium', 'high'];
+const VALID_CATEGORIES = [
+  'liquids',
+  'powerbank',
+  'blade',
+  'lighter',
+  'vape',
+  'powder',
+  'food',
+  'flammable',
+  'general',
+];
 
 export interface JudgeParams {
   base64?: string;
@@ -74,6 +85,7 @@ function normalizeItems(raw: unknown): ScanItem[] {
       typeof o.measurement === 'string' && o.measurement.trim()
         ? o.measurement.trim().slice(0, 24)
         : undefined;
+    const category = VALID_CATEGORIES.includes(String(o.category)) ? String(o.category) : 'general';
     return {
       id: `ai-${i}`,
       emoji,
@@ -86,6 +98,7 @@ function normalizeItems(raw: unknown): ScanItem[] {
       source: String(o.source ?? ''),
       confidence,
       measurement,
+      category,
     };
   });
 }

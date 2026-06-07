@@ -30,6 +30,11 @@ const TOOL = {
           properties: {
             emoji: { type: 'string', description: 'A single emoji representing the item' },
             name: { type: 'string', description: 'Item name (may include size/quantity)' },
+            category: {
+              type: 'string',
+              enum: ['liquids', 'powerbank', 'blade', 'lighter', 'vape', 'powder', 'food', 'flammable', 'general'],
+              description: 'Language-independent category of the item (for clustering/learning)',
+            },
             verdict: { type: 'string', enum: ['success', 'warning', 'danger', 'info'] },
             badge: { type: 'string', description: 'Short label (e.g., Carry-on OK, Cabin only, Checked only, Over 100ml, Prohibited)' },
             reason: { type: 'string', description: 'One-line reason' },

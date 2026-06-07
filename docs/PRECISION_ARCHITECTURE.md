@@ -60,7 +60,7 @@ _작성: 2026-06-06 / 갱신: 2026-06-07 / 상태: P2·P5 구현 완료, P3 골�
 - **P1**(사용자): 실제 AI 배포(`docs/SUPABASE_SETUP.md`) — 측정 시작점. ⏳ 배포 대기.
 - **P2** ✅: OCR 강조 프롬프트 + 항목별 `confidence`(low/medium/high) + 저확신·고위험 시 "가까이 다시 찍기" 루프. EF→`ai.ts`→`mockScan`→`ScanResultView`(4언어). 저확신은 verdict 다운그레이드 X(유지+주석). mock에서도 동작.
 - **P3 골격** ✅(배포 대기): `0002_regulations_corpus.sql`(pgvector 코퍼스+RLS+시드+`match_regulations` RPC) + `embed-corpus` EF(gte-small 384d 백필) + `judge-luggage` 동적 grounding(정적 폴백). 코퍼스를 DB로 이전 → 앱 재배포 없이 규칙 수정.
-- **P4**(다음): 결과 화면 "정정/실제 통과" 피드백 → `feedback` 테이블 → 플라이휠 v1. (테이블은 0002에 생성됨)
+- **P4 v1** ✅(EF 배포 대기): 결과 화면 항목별 정정/확인 피드백 → `submit-feedback` EF → `feedback` 테이블(`0003`에서 anon_id/dest_code/ai_verdict 자기충족 컬럼). `src/lib/feedback.ts`(graceful) + store `anonId`. 사용자 명시 행동만 익명 전송(사진·PII 미포함). 다음: 정정 누적 → 오판 패턴 분석 → 규정 chunk 보강/few-shot/`item_aliases` 확장.
 - **P5** ✅: eval 하니스(`src/lib/eval/`, 21 라벨 케이스 + 플러그블 predictor + 스코어러 + danger 안전 불변식). 결정적 규칙 레이어 회귀 net, 오프라인. 배포 후 `aiPredictor`로 전 파이프라인 정밀도 수치화.
 
 ## 7. 현재 코드 연결점
