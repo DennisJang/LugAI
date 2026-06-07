@@ -1,6 +1,16 @@
-import { pick, t } from '@/lib/i18n';
+import { pick, STRINGS, t, type Locale } from '@/lib/i18n';
 
 describe('i18n', () => {
+  it('every locale has the exact same key set (no missing/extra translations)', () => {
+    const ref = Object.keys(STRINGS.ko).sort();
+    for (const loc of Object.keys(STRINGS) as Locale[]) {
+      const keys = Object.keys(STRINGS[loc]).sort();
+      const missing = ref.filter((k) => !keys.includes(k));
+      const extra = keys.filter((k) => !ref.includes(k));
+      expect({ loc, missing, extra }).toEqual({ loc, missing: [], extra: [] });
+    }
+  });
+
   it('translates by locale', () => {
     expect(t('en', 'home.startScan')).toBe('Start scan');
     expect(t('ko', 'home.startScan')).toBe('스캔 시작');
