@@ -25,6 +25,8 @@ _업데이트: 2026-06-07_
 - **정밀도 #25 (P2·P5·P3 골격)** — ① **P2**: OCR 강조 프롬프트 + 항목별 확신도(low/med/high) + 저확신·고위험 시 "가까이 다시 찍기" 배너·핀 + 측정값 노출(EF→앱→결과 UI, 4언어, mock에서도 동작). ② **P5**: eval 하니스(`src/lib/eval/` 22 라벨 케이스 + 스코어러 + danger 안전 불변식, 오프라인). ③ **P3 골격**: `0002_regulations_corpus.sql`(pgvector 코퍼스+RLS+시드+`match_regulations`) + `embed-corpus` EF(gte-small 백필) + `judge-luggage` 동적 grounding(정적 폴백). **배포 전까지 앱 정상**. 설계: `docs/PRECISION_ARCHITECTURE.md`. ✅(P3는 배포 대기)
 - **정밀도 #25 (P4 플라이휠 v1)** — 결과 화면 항목별 **정정/확인 피드백**(펼침→"정확했나요? 정확/아니요"→"실제로는?" 3택→익명 전송, 4언어). `submit-feedback` EF + `feedback` 자기충족 컬럼(`0003`) + `src/lib/feedback.ts`(graceful) + store `anonId`. **사용자 명시 행동만 익명 전송**(사진·PII 미포함), 개인정보처리방침 반영. ✅(EF 배포 대기)
 - **UI 미니멀화** — 홈에서 예시 리스트·티저 제거 → 도착지/다가오는 여행 + 스캔 히어로 단일 포커스. ✅
+- **리텐션 #1 분실 클레임 키트** — 저장된 여행 스캔 = 내용물 증빙. `/claim/[id]`(항공편 정보 + 항목별 추정가치·포함토글 + 합계 + 공유) → 항공사 분실신고(PIR)에 붙여 씀. `src/lib/claim.ts`+테스트, store `claimDrafts`(v7 영속), trip 상세 진입, 4언어. 오프라인, Expo Go 검증. ✅
+- **리텐션 #2 내 짐 라이브러리** — 저장된 여행들의 물품을 명칭 기준 집계 → `/library`(횟수·가장 보수적 판정 도트). `src/lib/library.ts`+테스트, 프로필 진입, 4언어. 오프라인. ✅
 - **짐 보관소(Luggage Storage)** — 경쟁사 심층 리서치 후(자체결론: 제휴 API 없음·OSM 희박 → 자체 큐레이션) 구축. `0005 storage_spots`+`nearby_storage` RPC + `nearby-storage`/`report-storage` EF + `src/lib/storage.ts` + `/storage` 화면(리스트·필터·상세·신선도·제보) + 홈 진입 + **결과 화면 스캐너↔보관 브리지**(danger 물품 시). 지도는 `@rnmapbox/maps`(가드형 — Expo Go 리스트 폴백, **개발빌드+Mapbox 토큰에서 지도**). 문서 `docs/STORAGE.md`. ✅(EF 배포+개발빌드 대기)
 - **여행 자동 연동(웹훅)** — 예매(Trip.com·아고다·항공) 일자를 외부 자동화(Zapier/단축어)가 `ingest-trip` 웹훅으로 보내면 홈에 자동 표시. `0004 trip_inbox` + `ingest-trip`/`fetch-trips` EF + `src/lib/trips.ts` + 프로필→연결 화면(URL·연결코드·공유, 4언어). **직접 제휴 아님**(사용자 자동화 수신), PII·사진 미저장. 문서 `docs/TRIP_WEBHOOK.md`. ✅(EF 배포 대기)
 

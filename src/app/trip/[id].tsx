@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ScanResultView } from '@/components/ScanResultView';
-import { Button, PressableScale, Screen, Text } from '@/components/ui';
+import { Button, Card, PressableScale, Screen, Text } from '@/components/ui';
 import { radius, space, useTheme } from '@/design';
 import { countryName } from '@/lib/countries';
 import { useLocale, useT } from '@/lib/i18n';
@@ -70,6 +70,24 @@ export default function TripDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <ScanResultView scan={{ destination: trip.destination, items: trip.items, scannedAt: trip.createdAt }} />
+
+        <PressableScale
+          haptic="light"
+          onPress={() => router.push({ pathname: '/claim/[id]', params: { id: trip.id } })}
+          style={styles.claimEntry}>
+          <Card style={styles.claimRow}>
+            <View style={[styles.claimIcon, { backgroundColor: colors.backgroundAlt }]}>
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.flex}>
+              <Text variant="bodyStrong">{t('claim.entry')}</Text>
+              <Text variant="caption" muted>
+                {t('claim.entryDesc')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </Card>
+        </PressableScale>
       </ScrollView>
     </Screen>
   );
@@ -88,4 +106,8 @@ const styles = StyleSheet.create({
   },
   iconBtn: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: space[5], paddingBottom: space[12] },
+  claimEntry: { marginTop: space[2] },
+  claimRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  claimIcon: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  flex: { flex: 1 },
 });

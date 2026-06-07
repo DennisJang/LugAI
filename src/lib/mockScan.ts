@@ -223,7 +223,8 @@ export function computeNeedsRecapture(items: ScanItem[]): boolean {
   );
 }
 
-export const VERDICT_ORDER: VerdictKey[] = ['danger', 'warning', 'success', 'info'];
+// 심각도 순(높을수록 앞). info(신고·확인)는 success(OK)보다 보수적 → success 위에 둔다.
+export const VERDICT_ORDER: VerdictKey[] = ['danger', 'warning', 'info', 'success'];
 
 export function groupByVerdict(items: ScanItem[]): Record<VerdictKey, ScanItem[]> {
   return {

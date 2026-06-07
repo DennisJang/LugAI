@@ -58,6 +58,8 @@ export default function ProfileScreen() {
         {t('profile.travel')}
       </Text>
       <Card padding={0}>
+        <Row icon="albums-outline" label={t('library.entry')} onPress={() => router.push('/library')} />
+        <Divider inset={ROW_INSET} />
         <Row icon="link-outline" label={t('profile.connect')} onPress={() => router.push('/connect')} />
       </Card>
 

@@ -16,6 +16,18 @@ export interface Trip {
   items: ScanItem[];
 }
 
+/** 분실 수하물 신고서 초안(여행별). 스캔 기록 = 내용물 증빙. */
+export interface ClaimDraft {
+  airline?: string;
+  flightNo?: string;
+  bagTag?: string;
+  lostDate?: string;
+  /** itemId → 추정 가치(현지 통화, 숫자) */
+  values: Record<string, number>;
+  /** 신고에서 제외한 itemId */
+  excluded: string[];
+}
+
 export interface PendingImage {
   base64: string;
   mimeType: string;
@@ -62,6 +74,9 @@ interface TripState {
   trips: Trip[];
   addTrip: (scan: ScanResult) => void;
   removeTrip: (id: string) => void;
+  /** 여행별 분실 신고서 초안(영속) */
+  claimDrafts: Record<string, ClaimDraft>;
+  setClaimDraft: (tripId: string, draft: ClaimDraft) => void;
   hasHydrated: boolean;
   setHasHydrated: (v: boolean) => void;
 }
@@ -110,13 +125,19 @@ export const useTripStore = create<TripState>()(
             ...get().trips,
           ],
         }),
-      removeTrip: (id) => set({ trips: get().trips.filter((t) => t.id !== id) }),
+      removeTrip: (id) =>
+        set((s) => {
+          const { [id]: _drop, ...claimDrafts } = s.claimDrafts;
+          return { trips: s.trips.filter((t) => t.id !== id), claimDrafts };
+        }),
+      claimDrafts: {},
+      setClaimDraft: (tripId, draft) => set((s) => ({ claimDrafts: { ...s.claimDrafts, [tripId]: draft } })),
       hasHydrated: false,
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
       name: 'lugai-store',
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => AsyncStorage),
       // v3→: 저장된 Country 보강 + 신규 필드(anonId/feedbackKeys/upcomingTrip) 백필(결정적 영속)
       //      + 구버전 저엔트로피 anonId(연결코드)를 CSPRNG로 교체(보안)
@@ -127,6 +148,7 @@ export const useTripStore = create<TripState>()(
           anonId?: string;
           feedbackKeys?: string[];
           upcomingTrip?: UpcomingTrip | null;
+          claimDrafts?: Record<string, ClaimDraft>;
         } | null;
         if (p && typeof p === 'object') {
           const fix = (c?: Country) => (c?.code ? findCountry(c.code) ?? c : c);
@@ -137,6 +159,7 @@ export const useTripStore = create<TripState>()(
           if (!p.anonId || !ANON_RE.test(p.anonId)) p.anonId = makeAnonId();
           if (!Array.isArray(p.feedbackKeys)) p.feedbackKeys = [];
           if (p.upcomingTrip === undefined) p.upcomingTrip = null;
+          if (!p.claimDrafts || typeof p.claimDrafts !== 'object') p.claimDrafts = {};
         }
         return p as TripState;
       },
@@ -146,6 +169,7 @@ export const useTripStore = create<TripState>()(
         destination: s.destination,
         upcomingTrip: s.upcomingTrip,
         trips: s.trips,
+        claimDrafts: s.claimDrafts,
         locale: s.locale,
         onboarded: s.onboarded,
         units: s.units,
