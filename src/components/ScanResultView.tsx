@@ -92,6 +92,25 @@ export function ScanResultView({ scan, onRecapture }: { scan: ScanResult; onReca
         );
       })}
 
+      {groups.danger.length > 0 ? (
+        <PressableScale
+          haptic="light"
+          onPress={() => router.push('/storage')}
+          accessibilityLabel={`${t('storage.bridge')}, ${t('storage.bridgeCta')}`}
+          style={[styles.bridge, { backgroundColor: colors.primaryTint }]}>
+          <Ionicons name="cube-outline" size={22} color={colors.primary} />
+          <View style={styles.flex}>
+            <Text variant="bodyStrong" color="primary">
+              {t('storage.bridge')}
+            </Text>
+            <Text variant="caption" color="textSecondary">
+              {t('storage.bridgeCta')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+        </PressableScale>
+      ) : null}
+
       <View style={[styles.disclaimer, { backgroundColor: colors.backgroundAlt }]}>
         <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
         <Text variant="footnote" color="textTertiary" style={styles.flex}>
@@ -352,6 +371,7 @@ const styles = StyleSheet.create({
   feedbackPick: { gap: space[2] },
   feedbackChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
   feedbackChip: { paddingVertical: 4, paddingHorizontal: space[3], borderRadius: radius.full },
+  bridge: { flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[4], borderRadius: radius['2xl'], marginBottom: space[3] },
   disclaimer: { flexDirection: 'row', gap: space[2], padding: space[3], borderRadius: radius.md, marginTop: space[2] },
   rulesLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[1], paddingVertical: space[4] },
   flex: { flex: 1 },

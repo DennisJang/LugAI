@@ -39,6 +39,9 @@ interface TripState {
   /** 이미 피드백을 보낸 항목 키(`${destCode}|${itemKey}`) — 중복 제출 방지(영속) */
   feedbackKeys: string[];
   markFeedback: (key: string) => void;
+  /** 이미 제보한 보관소 id — 세션 내 중복 제보 방지(영속 안 함) */
+  reportedSpots: number[];
+  markSpotReported: (id: number) => void;
   locale: Locale;
   setLocale: (l: Locale) => void;
   onboarded: boolean;
@@ -82,6 +85,9 @@ export const useTripStore = create<TripState>()(
       feedbackKeys: [],
       markFeedback: (key) =>
         set((s) => (s.feedbackKeys.includes(key) ? s : { feedbackKeys: [...s.feedbackKeys, key] })),
+      reportedSpots: [],
+      markSpotReported: (id) =>
+        set((s) => (s.reportedSpots.includes(id) ? s : { reportedSpots: [...s.reportedSpots, id] })),
       locale: deviceLocale(),
       setLocale: (locale) => set({ locale }),
       onboarded: false,

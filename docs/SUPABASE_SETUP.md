@@ -110,6 +110,14 @@ npx supabase functions deploy fetch-trips --no-verify-jwt
 - 외부 자동화(Zapier/단축어)가 예매 일자를 `ingest-trip`으로 POST → 앱 홈에 자동 표시.
 - 연결 URL·코드는 앱: 프로필 → **여행 자동 연동**. 미배포 시 앱은 수동 도착지로 정상 동작.
 
+### 6) (짐 보관소) — 자세한 내용 `docs/STORAGE.md`
+```bash
+# db push에 0005_storage_spots.sql 포함됨(테이블+RPC+시드)
+npx supabase functions deploy nearby-storage --no-verify-jwt
+npx supabase functions deploy report-storage --no-verify-jwt
+```
+- 미배포 시 보관소 화면은 graceful 빈 상태. **지도는 Mapbox 토큰 + EAS 개발빌드 필요**(`docs/STORAGE.md`).
+
 ---
 
 ## (선택) 향후

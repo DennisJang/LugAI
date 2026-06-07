@@ -100,6 +100,21 @@ export default function HomeScreen() {
           onPress={() => router.push('/scan')}
         />
       </Card>
+
+      <PressableScale haptic="light" onPress={() => router.push('/storage')} style={styles.storageBlock}>
+        <Card style={styles.storageRow}>
+          <View style={[styles.storageIcon, { backgroundColor: colors.backgroundAlt }]}>
+            <Ionicons name="cube-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.flex}>
+            <Text variant="bodyStrong">{t('storage.homeTitle')}</Text>
+            <Text variant="caption" muted>
+              {t('storage.homeDesc')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+        </Card>
+      </PressableScale>
     </Screen>
   );
 }
@@ -119,7 +134,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     borderRadius: radius.full,
   },
-  heroCard: { alignItems: 'center', paddingVertical: space[8], gap: space[4] },
+  heroCard: { alignItems: 'center', paddingVertical: space[8], gap: space[4], marginBottom: space[5] },
   scanIcon: { width: 72, height: 72, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   heroText: { gap: space[1], alignItems: 'center' },
+  storageBlock: {},
+  storageRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  storageIcon: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  flex: { flex: 1 },
 });
