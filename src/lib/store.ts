@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import { getLocales } from 'expo-localization';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -6,6 +7,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { findCountry, type Country } from './countries';
 import type { Locale } from './i18n';
 import type { ScanItem, ScanResult } from './mockScan';
+import type { UpcomingTrip } from './trips';
 
 export interface Trip {
   id: string;
@@ -32,7 +34,7 @@ function deviceLocale(): Locale {
 }
 
 interface TripState {
-  /** 익명 피드백 클러스터링용 무작위 ID (PII 아님, 영속) */
+  /** 익명 ID 겸 여행 연동 '연결코드'. PII는 아니지만 추측 불가해야 함(CSPRNG, 영속) */
   anonId: string;
   /** 이미 피드백을 보낸 항목 키(`${destCode}|${itemKey}`) — 중복 제출 방지(영속) */
   feedbackKeys: string[];
@@ -45,6 +47,9 @@ interface TripState {
   setUnits: (u: 'metric' | 'imperial') => void;
   destination: Country;
   setDestination: (c: Country) => void;
+  /** 예매에서 자동 수신된 다가오는 여행(영속) */
+  upcomingTrip: UpcomingTrip | null;
+  setUpcomingTrip: (t: UpcomingTrip | null) => void;
   /** 카메라/앨범에서 받은 이미지(임시, 영속화 안 함) */
   pendingImage: PendingImage | null;
   setPendingImage: (img: PendingImage | null) => void;
@@ -62,9 +67,13 @@ function makeId(): string {
   return `trip-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
+// 연결코드 겸용이라 추측 불가해야 함 → CSPRNG(UUIDv4, ~122비트). Math.random 사용 금지.
 function makeAnonId(): string {
-  return `anon-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
+  return `anon-${Crypto.randomUUID()}`;
 }
+
+// 신규(UUID) 형식 판별 — 구버전 저혼합도 anonId는 마이그레이션에서 교체한다.
+const ANON_RE = /^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const useTripStore = create<TripState>()(
   persist(
@@ -81,6 +90,8 @@ export const useTripStore = create<TripState>()(
       setUnits: (units) => set({ units }),
       destination: findCountry('JP')!,
       setDestination: (destination) => set({ destination }),
+      upcomingTrip: null,
+      setUpcomingTrip: (upcomingTrip) => set({ upcomingTrip }),
       pendingImage: null,
       setPendingImage: (pendingImage) => set({ pendingImage }),
       currentScan: null,
@@ -99,19 +110,27 @@ export const useTripStore = create<TripState>()(
     }),
     {
       name: 'lugai-store',
-      version: 4,
+      version: 6,
       storage: createJSONStorage(() => AsyncStorage),
-      // v3→: 저장된 Country 보강 + 신규 필드(anonId/feedbackKeys) 백필(결정적 영속)
+      // v3→: 저장된 Country 보강 + 신규 필드(anonId/feedbackKeys/upcomingTrip) 백필(결정적 영속)
+      //      + 구버전 저엔트로피 anonId(연결코드)를 CSPRNG로 교체(보안)
       migrate: (persisted) => {
-        const p = persisted as { destination?: Country; trips?: Trip[]; anonId?: string; feedbackKeys?: string[] } | null;
+        const p = persisted as {
+          destination?: Country;
+          trips?: Trip[];
+          anonId?: string;
+          feedbackKeys?: string[];
+          upcomingTrip?: UpcomingTrip | null;
+        } | null;
         if (p && typeof p === 'object') {
           const fix = (c?: Country) => (c?.code ? findCountry(c.code) ?? c : c);
           if (p.destination) p.destination = fix(p.destination) as Country;
           if (Array.isArray(p.trips)) {
             p.trips = p.trips.map((tr) => ({ ...tr, destination: fix(tr.destination) as Country }));
           }
-          if (!p.anonId) p.anonId = makeAnonId();
+          if (!p.anonId || !ANON_RE.test(p.anonId)) p.anonId = makeAnonId();
           if (!Array.isArray(p.feedbackKeys)) p.feedbackKeys = [];
+          if (p.upcomingTrip === undefined) p.upcomingTrip = null;
         }
         return p as TripState;
       },
@@ -119,6 +138,7 @@ export const useTripStore = create<TripState>()(
         anonId: s.anonId,
         feedbackKeys: s.feedbackKeys,
         destination: s.destination,
+        upcomingTrip: s.upcomingTrip,
         trips: s.trips,
         locale: s.locale,
         onboarded: s.onboarded,

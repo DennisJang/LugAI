@@ -55,6 +55,13 @@ export default function ProfileScreen() {
       </View>
 
       <Text variant="footnote" color="textTertiary" style={styles.groupTitle}>
+        {t('profile.travel')}
+      </Text>
+      <Card padding={0}>
+        <Row icon="link-outline" label={t('profile.connect')} onPress={() => router.push('/connect')} />
+      </Card>
+
+      <Text variant="footnote" color="textTertiary" style={styles.groupTitle}>
         {t('profile.settings')}
       </Text>
       <Card padding={0}>
@@ -91,8 +98,8 @@ const styles = StyleSheet.create({
   header: { paddingTop: space[2], marginBottom: space[5] },
   account: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
   avatar: { width: 56, height: 56, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  stats: { flexDirection: 'row', gap: space[3], marginTop: space[6], marginBottom: space[6] },
+  stats: { flexDirection: 'row', gap: space[3], marginTop: space[6] },
   statTile: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: space[5] },
-  groupTitle: { marginBottom: space[2], marginLeft: space[3], textTransform: 'uppercase' },
+  groupTitle: { marginTop: space[6], marginBottom: space[2], marginLeft: space[3], textTransform: 'uppercase' },
   flex: { flex: 1 },
 });

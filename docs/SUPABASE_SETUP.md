@@ -101,6 +101,15 @@ npx supabase functions deploy submit-feedback --no-verify-jwt
 - 확인: `select dest_code, item_key, ai_verdict, user_verdict from feedback order by created_at desc limit 10;`
 - 미배포 시 앱은 조용히 무시(피드백만 안 쌓임, UX 영향 없음).
 
+### 5) (여행 자동 연동) 웹훅 — 자세한 내용 `docs/TRIP_WEBHOOK.md`
+```bash
+# db push에 0004_trip_inbox.sql 포함됨
+npx supabase functions deploy ingest-trip --no-verify-jwt
+npx supabase functions deploy fetch-trips --no-verify-jwt
+```
+- 외부 자동화(Zapier/단축어)가 예매 일자를 `ingest-trip`으로 POST → 앱 홈에 자동 표시.
+- 연결 URL·코드는 앱: 프로필 → **여행 자동 연동**. 미배포 시 앱은 수동 도착지로 정상 동작.
+
 ---
 
 ## (선택) 향후

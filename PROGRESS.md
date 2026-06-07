@@ -24,12 +24,15 @@ _업데이트: 2026-06-07_
 - **테스트·모니터링** — jest 유닛 테스트 통과(`npm test`) · Sentry 가드 init(`EXPO_PUBLIC_SENTRY_DSN` 설정 시 활성). ✅
 - **정밀도 #25 (P2·P5·P3 골격)** — ① **P2**: OCR 강조 프롬프트 + 항목별 확신도(low/med/high) + 저확신·고위험 시 "가까이 다시 찍기" 배너·핀 + 측정값 노출(EF→앱→결과 UI, 4언어, mock에서도 동작). ② **P5**: eval 하니스(`src/lib/eval/` 22 라벨 케이스 + 스코어러 + danger 안전 불변식, 오프라인). ③ **P3 골격**: `0002_regulations_corpus.sql`(pgvector 코퍼스+RLS+시드+`match_regulations`) + `embed-corpus` EF(gte-small 백필) + `judge-luggage` 동적 grounding(정적 폴백). **배포 전까지 앱 정상**. 설계: `docs/PRECISION_ARCHITECTURE.md`. ✅(P3는 배포 대기)
 - **정밀도 #25 (P4 플라이휠 v1)** — 결과 화면 항목별 **정정/확인 피드백**(펼침→"정확했나요? 정확/아니요"→"실제로는?" 3택→익명 전송, 4언어). `submit-feedback` EF + `feedback` 자기충족 컬럼(`0003`) + `src/lib/feedback.ts`(graceful) + store `anonId`. **사용자 명시 행동만 익명 전송**(사진·PII 미포함), 개인정보처리방침 반영. ✅(EF 배포 대기)
+- **UI 미니멀화** — 홈에서 예시 리스트·티저 제거 → 도착지/다가오는 여행 + 스캔 히어로 단일 포커스. ✅
+- **여행 자동 연동(웹훅)** — 예매(Trip.com·아고다·항공) 일자를 외부 자동화(Zapier/단축어)가 `ingest-trip` 웹훅으로 보내면 홈에 자동 표시. `0004 trip_inbox` + `ingest-trip`/`fetch-trips` EF + `src/lib/trips.ts` + 프로필→연결 화면(URL·연결코드·공유, 4언어). **직접 제휴 아님**(사용자 자동화 수신), PII·사진 미저장. 문서 `docs/TRIP_WEBHOOK.md`. ✅(EF 배포 대기)
 
 ## ⚠️ 사용자가 해야 할 일
 1. **AI 실연동 + 정밀도 RAG 활성화 (`docs/SUPABASE_SETUP.md`)**
    - P1: `npx supabase functions deploy judge-luggage --no-verify-jwt` + `npx supabase secrets set ANTHROPIC_API_KEY=...` (프로젝트 `anmmvrftdgnindvkylsr`)
    - P3: `npx supabase db push`(0002 코퍼스 + 0003 feedback) → `embed-corpus` 배포·백필 1회 → `judge-luggage` 재배포. (문서 "🔑 정밀도(P3)" 섹션)
    - P4: `npx supabase functions deploy submit-feedback --no-verify-jwt` (피드백 수집 활성화)
+   - 여행 연동: `db push`(0004) + `ingest-trip`·`fetch-trips` EF 배포. (문서 `docs/TRIP_WEBHOOK.md`)
    - 이 세션의 Supabase MCP가 해당 프로젝트에 접근 불가해 **자동 배포 못 함**. 배포 전까지 앱은 mock + 정적 grounding으로 정상 동작. 세팅 완료 후 알려주면 라이브 검증.
 2. **support 이메일 교체** — `src/lib/legal.ts`·`STORE_LISTING.md`의 `support@lugai.app` → 실제 운영 이메일.
 3. **GitHub push** — 로컬 커밋 완료. `main` 직접 푸시는 권한 게이트로 보류 중. "push" 지시 주면 올림(또는 직접 `git push -u origin main`).

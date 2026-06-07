@@ -1,26 +1,49 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { Button, Card, PressableScale, Screen, Text, VerdictBadge } from '@/components/ui';
-import { radius, space, useTheme, type VerdictKey } from '@/design';
-import { countryName } from '@/lib/countries';
+import { Button, Card, PressableScale, Screen, Text } from '@/components/ui';
+import { radius, space, useTheme } from '@/design';
+import { countryName, findCountry } from '@/lib/countries';
 import { useLocale, useT } from '@/lib/i18n';
 import { useTripStore } from '@/lib/store';
+import { fetchUpcomingTrip, formatTripDates } from '@/lib/trips';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const t = useT();
   const locale = useLocale();
+  const anonId = useTripStore((s) => s.anonId);
   const destination = useTripStore((s) => s.destination);
+  const upcomingTrip = useTripStore((s) => s.upcomingTrip);
+  const setUpcomingTrip = useTripStore((s) => s.setUpcomingTrip);
+  const setDestination = useTripStore((s) => s.setDestination);
   const destName = countryName(destination, locale);
 
-  const examples: { emoji: string; name: string; verdict: VerdictKey; label: string }[] = [
-    { emoji: '🔋', name: t('home.ex1'), verdict: 'warning', label: t('home.ex1Badge') },
-    { emoji: '💧', name: t('home.ex2'), verdict: 'danger', label: t('home.ex2Badge') },
-    { emoji: '✂️', name: t('home.ex3'), verdict: 'success', label: t('home.ex3Badge') },
-  ];
+  const hasTrip = !!upcomingTrip && upcomingTrip.destCode === destination.code;
+  const tripDates = hasTrip ? formatTripDates(upcomingTrip.startDate, upcomingTrip.endDate, locale) : '';
+
+  // 예매에서 자동 수신된 다가오는 여행이 있으면 도착지 자동 설정(graceful: 미연동 시 무동작).
+  // 단, 사용자가 수동으로 도착지를 바꿔 둔 경우 새 예매가 아닌 한 그 선택을 덮어쓰지 않는다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const trip = await fetchUpcomingTrip(anonId);
+      if (cancelled || !trip) return;
+      const country = findCountry(trip.destCode);
+      if (!country) return;
+      const { upcomingTrip: prev, destination: cur } = useTripStore.getState();
+      setUpcomingTrip(trip);
+      const isNewTrip = !prev || prev.destCode !== trip.destCode;
+      const onSyncedDest = !prev || cur.code === prev.destCode;
+      if (isNewTrip || onSyncedDest) setDestination(country);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [anonId, setUpcomingTrip, setDestination]);
 
   return (
     <Screen scroll>
@@ -39,9 +62,14 @@ export default function HomeScreen() {
               <Text style={styles.flag}>{destination.flag}</Text>
               <View style={styles.gap2}>
                 <Text variant="caption" muted>
-                  {t('home.destination')}
+                  {hasTrip ? t('home.upcoming') : t('home.destination')}
                 </Text>
                 <Text variant="title3">{destName}</Text>
+                {hasTrip && tripDates ? (
+                  <Text variant="footnote" color="textTertiary">
+                    {tripDates}
+                  </Text>
+                ) : null}
               </View>
             </View>
             <View style={[styles.changeChip, { backgroundColor: colors.backgroundAlt }]}>
@@ -72,37 +100,6 @@ export default function HomeScreen() {
           onPress={() => router.push('/scan')}
         />
       </Card>
-
-      <Text variant="headline" style={styles.sectionTitle}>
-        {t('home.examplesTitle')}
-      </Text>
-      <Card padding={0} style={styles.exampleGroup}>
-        {examples.map((it, i) => (
-          <View key={it.name}>
-            {i > 0 && <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />}
-            <View style={styles.exampleRow}>
-              <Text style={styles.exampleEmoji}>{it.emoji}</Text>
-              <Text variant="body" style={styles.flex}>
-                {it.name}
-              </Text>
-              <VerdictBadge verdict={it.verdict} label={it.label} size="sm" />
-            </View>
-          </View>
-        ))}
-      </Card>
-
-      <PressableScale haptic="light" onPress={() => router.push('/discover')}>
-        <Card style={styles.teaser}>
-          <Text style={styles.teaserEmoji}>🧳</Text>
-          <View style={styles.flex}>
-            <Text variant="bodyStrong">{t('home.teaserTitle')}</Text>
-            <Text variant="caption" muted>
-              {t('home.teaserDesc')}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-        </Card>
-      </PressableScale>
     </Screen>
   );
 }
@@ -122,21 +119,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     borderRadius: radius.full,
   },
-  heroCard: { marginBottom: space[7], alignItems: 'center', paddingVertical: space[8], gap: space[4] },
+  heroCard: { alignItems: 'center', paddingVertical: space[8], gap: space[4] },
   scanIcon: { width: 72, height: 72, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   heroText: { gap: space[1], alignItems: 'center' },
-  sectionTitle: { marginBottom: space[3], marginLeft: space[1] },
-  exampleGroup: { marginBottom: space[7] },
-  exampleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[3],
-    paddingVertical: space[4],
-    paddingHorizontal: space[5],
-  },
-  exampleEmoji: { fontSize: 24 },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: space[5] + 24 + space[3] },
-  teaser: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
-  teaserEmoji: { fontSize: 28 },
-  flex: { flex: 1 },
 });
